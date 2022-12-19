@@ -1,84 +1,21 @@
-use std::collections::HashMap;
+mod constants;
+mod running_machine;
+mod table;
+mod task;
 
-use iced::alignment;
-use iced::theme;
 use iced::widget::button;
 use iced::widget::horizontal_rule;
-use iced::widget::pane_grid;
 use iced::widget::vertical_rule;
-use iced::widget::{
-    checkbox, column as ui_column, container, horizontal_space, image, radio, row, scrollable,
-    slider, text, text_input, toggler, vertical_space,
-};
-use iced::widget::{Button, Column, Container, Slider};
+use iced::widget::{column as ui_column, container, row, text, text_input};
 use iced::Alignment;
-use iced::{Color, Element, Length, Renderer, Sandbox, Settings};
+use iced::{Element, Length, Sandbox, Settings};
+use running_machine::RunningMachine;
+use table::table_tasks_editor;
+use table::Table;
+use task::Task;
 
 pub fn main() -> iced::Result {
     App::run(Settings::default())
-}
-
-#[derive(Debug, Clone, Copy)]
-enum Direction {
-    Left,
-    Right,
-    Stop,
-}
-
-struct Task {
-    state: usize,
-    char: char,
-    direction: Direction,
-}
-
-impl Task {
-    pub fn new() -> Self {
-        Self {
-            state: 0,
-            char: '0',
-            direction: Direction::Stop,
-        }
-    }
-}
-
-const EMPTY_CHAR: char = '#';
-
-struct Table {
-    states_number: usize,
-    characters: String,
-    tasks: Vec<Vec<Task>>,
-}
-
-impl Table {
-    pub fn new_empty() -> Self {
-        let states_number = 5;
-        let characters: String = format!("{}{}", "abcde", EMPTY_CHAR);
-        let tasks: Vec<Vec<Task>> = (0..states_number)
-            .map(|_| (0..characters.len()).map(|_| Task::new()).collect())
-            .collect();
-
-        Self {
-            states_number,
-            characters,
-            tasks,
-        }
-    }
-}
-
-struct RunningMachine {
-    state: usize,
-    tape: String,
-    cursor_position: isize,
-}
-
-impl RunningMachine {
-    pub fn new(initial_tape: String, initial_cursor_position: isize) -> Self {
-        Self {
-            state: 0,
-            tape: initial_tape,
-            cursor_position: initial_cursor_position,
-        }
-    }
 }
 
 struct App {
@@ -98,6 +35,7 @@ enum Message {
     TableStatesNumberChanged(String),
     TableStatesNumberIncremented,
     TableStatesNumberDecremented,
+    TableTaskChanged(Task, usize, usize),
 }
 
 impl Sandbox for App {
@@ -121,7 +59,12 @@ impl Sandbox for App {
         "Turing Machine".into()
     }
 
-    fn update(&mut self, message: Self::Message) {}
+    fn update(&mut self, message: Self::Message) {
+        match message {
+            Message::TableTaskChanged(task, row, column) => self.table.tasks[row][column] = task,
+            _ => {}
+        }
+    }
 
     fn view(&self) -> Element<Self::Message> {
         let initial_tape_input = text_input(
@@ -172,66 +115,34 @@ impl Sandbox for App {
             .padding(10)
             .on_press(Message::TableStatesNumberDecremented);
 
-        let mut table = row![vertical_rule(0)].align_items(Alignment::Fill);
+        let tasks_editor = table_tasks_editor(&self.table, &Message::TableTaskChanged);
 
-        let mut first_column = ui_column![horizontal_rule(0), " ", horizontal_rule(0)]
-            .align_items(Alignment::Center)
-            .width(Length::FillPortion(1));
-
-        for i in 0..self.table.tasks.len() {
-            first_column = first_column.push(text(i));
-            first_column = first_column.push(horizontal_rule(0));
-        }
-
-        table = table.push(first_column);
-        table = table.push(vertical_rule(0));
-
-        for (column_index, char) in self.table.characters.char_indices() {
-            let mut col = ui_column![horizontal_rule(0), text(char), horizontal_rule(0)]
-                .align_items(Alignment::Center)
-                .width(Length::FillPortion(1));
-
-            for row_index in 0..self.table.tasks.len() {
-                let Task {
-                    state,
-                    char,
-                    direction,
-                } = self.table.tasks[row_index][column_index];
-
-                col = col.push(
-                    container(text(format!("{} {:?} {}", state, direction, char))).padding(10),
-                );
-                col = col.push(horizontal_rule(0));
-            }
-
-            table = table.push(col);
-            table = table.push(vertical_rule(0));
-        }
-
-        let content = ui_column![
-            "Tape text",
-            initial_tape_input,
-            "Cursor position",
-            row![
-                initial_cursor_position_input,
-                initial_cursor_position_increment_button,
-                initial_cursor_position_decrement_button,
+        let content = row![
+            ui_column![
+                "Tape text",
+                initial_tape_input,
+                "Cursor position",
+                row![
+                    initial_cursor_position_input,
+                    initial_cursor_position_increment_button,
+                    initial_cursor_position_decrement_button,
+                ]
+                .spacing(10),
+                "Table states number",
+                row![
+                    table_states_number_input,
+                    table_states_number_increment_button,
+                    table_states_number_decrement_button,
+                ]
+                .spacing(10),
+                "Table characters",
+                table_characters_input,
             ]
-            .spacing(10),
-            "Table states number",
-            row![
-                table_states_number_input,
-                table_states_number_increment_button,
-                table_states_number_decrement_button,
-            ]
-            .spacing(10),
-            "Table characters",
-            table_characters_input,
-            table
+            .max_width(200),
+            tasks_editor
         ]
         .spacing(20)
-        .padding(20)
-        .max_width(600);
+        .padding(20);
 
         container(content)
             .width(Length::Fill)
