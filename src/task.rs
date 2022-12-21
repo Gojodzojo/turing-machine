@@ -1,5 +1,4 @@
 use core::fmt;
-use std::str::FromStr;
 
 use crate::constants::{DEFAULT_STATE, DEFAULT_TASK_CHAR, DEFAULT_TASK_DIRECTION};
 

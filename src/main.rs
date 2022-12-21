@@ -1,14 +1,12 @@
 mod constants;
+mod number_input;
 mod running_machine;
 mod table;
 mod task;
 
-use iced::widget::button;
-use iced::widget::horizontal_rule;
-use iced::widget::vertical_rule;
-use iced::widget::{column as ui_column, container, row, text, text_input};
-use iced::Alignment;
+use iced::widget::{column as ui_column, container, row, text_input};
 use iced::{Element, Length, Sandbox, Settings};
+use number_input::number_input;
 use running_machine::RunningMachine;
 use table::table_tasks_editor;
 use table::Table;
@@ -28,13 +26,9 @@ struct App {
 #[derive(Debug, Clone)]
 enum Message {
     InitialTapeChanged(String),
-    InitialCursorPositionChanged(String),
-    InitialCursorPositionIncremented,
-    InitialCursorPositionDecremented,
+    InitialCursorPositionChanged(isize),
     TableCharactersChanged(String),
-    TableStatesNumberChanged(String),
-    TableStatesNumberIncremented,
-    TableStatesNumberDecremented,
+    TableStatesNumberChanged(usize),
     TableTaskChanged(Task, usize, usize),
 }
 
@@ -62,6 +56,12 @@ impl Sandbox for App {
     fn update(&mut self, message: Self::Message) {
         match message {
             Message::TableTaskChanged(task, row, column) => self.table.tasks[row][column] = task,
+            Message::InitialCursorPositionChanged(position) => {
+                self.innitial_cursor_position = position
+            }
+            Message::TableStatesNumberChanged(states_number) => {
+                self.table.states_number = states_number
+            }
             _ => {}
         }
     }
@@ -75,21 +75,12 @@ impl Sandbox for App {
         .padding(10)
         .size(20);
 
-        let initial_cursor_position_input = text_input(
+        let initial_cursor_position_input = number_input(
             "Set initial cursor position...",
-            &format!("{}", self.innitial_cursor_position),
-            Message::InitialCursorPositionChanged,
-        )
-        .padding(10)
-        .size(20);
-
-        let initial_cursor_position_increment_button = button("+")
-            .padding(10)
-            .on_press(Message::InitialCursorPositionIncremented);
-
-        let initial_cursor_position_decrement_button = button("-")
-            .padding(10)
-            .on_press(Message::InitialCursorPositionDecremented);
+            self.innitial_cursor_position,
+            None,
+            &Message::InitialCursorPositionChanged,
+        );
 
         let table_characters_input = text_input(
             "Set table characters...",
@@ -99,21 +90,12 @@ impl Sandbox for App {
         .padding(10)
         .size(20);
 
-        let table_states_number_input = text_input(
+        let table_states_number_input = number_input(
             "Set table states number...",
-            &format!("{}", self.table.states_number),
-            Message::TableStatesNumberChanged,
-        )
-        .padding(10)
-        .size(20);
-
-        let table_states_number_increment_button = button("+")
-            .padding(10)
-            .on_press(Message::TableStatesNumberIncremented);
-
-        let table_states_number_decrement_button = button("-")
-            .padding(10)
-            .on_press(Message::TableStatesNumberDecremented);
+            self.table.states_number,
+            Some(1),
+            &Message::TableStatesNumberChanged,
+        );
 
         let tasks_editor = table_tasks_editor(&self.table, &Message::TableTaskChanged);
 
@@ -122,23 +104,14 @@ impl Sandbox for App {
                 "Tape text",
                 initial_tape_input,
                 "Cursor position",
-                row![
-                    initial_cursor_position_input,
-                    initial_cursor_position_increment_button,
-                    initial_cursor_position_decrement_button,
-                ]
-                .spacing(10),
+                initial_cursor_position_input,
                 "Table states number",
-                row![
-                    table_states_number_input,
-                    table_states_number_increment_button,
-                    table_states_number_decrement_button,
-                ]
-                .spacing(10),
+                table_states_number_input,
                 "Table characters",
                 table_characters_input,
             ]
-            .max_width(200),
+            .max_width(200)
+            .spacing(10),
             tasks_editor
         ]
         .spacing(20)
