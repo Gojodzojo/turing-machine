@@ -12,27 +12,7 @@ use crate::{
     task::{Direction, Task},
 };
 
-pub struct Table {
-    pub states_number: usize,
-    pub characters: String,
-    pub tasks: Vec<Vec<Task>>,
-}
-
-impl Table {
-    pub fn new_empty() -> Self {
-        let states_number = 5;
-        let characters: String = format!("{}{}", "abcde", EMPTY_CHAR);
-        let tasks: Vec<Vec<Task>> = (0..states_number)
-            .map(|_| (0..characters.len()).map(|_| Task::new()).collect())
-            .collect();
-
-        Self {
-            states_number,
-            characters,
-            tasks,
-        }
-    }
-}
+use super::Table;
 
 const CELL_HEIGHT: u16 = 50;
 const CELL_WIDTH: u16 = 125;
@@ -41,11 +21,14 @@ pub fn table_tasks_editor<'a, Message: 'a + Clone>(
     table: &Table,
     on_task_change: &'a impl Fn(Task, usize, usize) -> Message,
 ) -> Row<'a, Message> {
+    let mut sorted_old_characters: Vec<_> = table.characters.chars().collect();
+    sorted_old_characters.sort();
+
     let mut tasks_editor: Row<Message> =
         row![vertical_rule(0)]
             .align_items(Alignment::Fill)
             .width(Length::Units(
-                (1 + table.characters.len() as u16) * CELL_WIDTH,
+                (1 + sorted_old_characters.len() as u16) * CELL_WIDTH,
             ));
 
     let mut first_column = ui_column![
@@ -57,14 +40,14 @@ pub fn table_tasks_editor<'a, Message: 'a + Clone>(
     .width(Length::FillPortion(1));
 
     for i in 0..table.states_number {
-        first_column = first_column.push(task_editor_cell(vec![text(i).into()]));
-        first_column = first_column.push(horizontal_rule(0));
+        first_column = first_column
+            .push(task_editor_cell(vec![text(i).into()]))
+            .push(horizontal_rule(0));
     }
 
-    tasks_editor = tasks_editor.push(first_column);
-    tasks_editor = tasks_editor.push(vertical_rule(0));
+    tasks_editor = tasks_editor.push(first_column).push(vertical_rule(0));
 
-    for (column_index, char) in table.characters.char_indices() {
+    for (column_index, char) in sorted_old_characters.iter().enumerate() {
         let mut col = ui_column![
             horizontal_rule(0),
             task_editor_cell(vec![text(char).into()]),

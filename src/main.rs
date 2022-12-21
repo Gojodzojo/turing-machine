@@ -8,8 +8,8 @@ use iced::widget::{column as ui_column, container, row, text_input};
 use iced::{Element, Length, Sandbox, Settings};
 use number_input::number_input;
 use running_machine::RunningMachine;
-use table::table_tasks_editor;
-use table::Table;
+use table::table_characters_input::table_characters_input;
+use table::{table_tasks_editor::table_tasks_editor, Table};
 use task::Task;
 
 pub fn main() -> iced::Result {
@@ -54,15 +54,14 @@ impl Sandbox for App {
     }
 
     fn update(&mut self, message: Self::Message) {
+        use Message::*;
+
         match message {
-            Message::TableTaskChanged(task, row, column) => self.table.tasks[row][column] = task,
-            Message::InitialCursorPositionChanged(position) => {
-                self.innitial_cursor_position = position
-            }
-            Message::TableStatesNumberChanged(states_number) => {
-                self.table.states_number = states_number
-            }
-            _ => {}
+            TableTaskChanged(task, row, column) => self.table.tasks[row][column] = task,
+            InitialTapeChanged(new_tape) => self.initial_tape = new_tape,
+            InitialCursorPositionChanged(position) => self.innitial_cursor_position = position,
+            TableStatesNumberChanged(states_number) => self.table.states_number = states_number,
+            TableCharactersChanged(new_characters) => self.table.change_characters(new_characters),
         }
     }
 
@@ -82,13 +81,8 @@ impl Sandbox for App {
             &Message::InitialCursorPositionChanged,
         );
 
-        let table_characters_input = text_input(
-            "Set table characters...",
-            &self.table.characters,
-            Message::TableCharactersChanged,
-        )
-        .padding(10)
-        .size(20);
+        let table_characters_input =
+            table_characters_input(&self.table, &Message::TableCharactersChanged);
 
         let table_states_number_input = number_input(
             "Set table states number...",
