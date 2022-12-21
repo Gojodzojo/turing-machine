@@ -9,6 +9,7 @@ use iced::{Element, Length, Sandbox, Settings};
 use number_input::number_input;
 use running_machine::RunningMachine;
 use table::table_characters_input::table_characters_input;
+use table::table_states_number_input::table_states_number_input;
 use table::{table_tasks_editor::table_tasks_editor, Table};
 use task::Task;
 
@@ -59,9 +60,11 @@ impl Sandbox for App {
         match message {
             TableTaskChanged(task, row, column) => self.table.tasks[row][column] = task,
             InitialTapeChanged(new_tape) => self.initial_tape = new_tape,
-            InitialCursorPositionChanged(position) => self.innitial_cursor_position = position,
-            TableStatesNumberChanged(states_number) => self.table.states_number = states_number,
             TableCharactersChanged(new_characters) => self.table.change_characters(new_characters),
+            InitialCursorPositionChanged(position) => self.innitial_cursor_position = position,
+            TableStatesNumberChanged(new_states_number) => {
+                self.table.change_states_number(new_states_number)
+            }
         }
     }
 
@@ -84,12 +87,8 @@ impl Sandbox for App {
         let table_characters_input =
             table_characters_input(&self.table, &Message::TableCharactersChanged);
 
-        let table_states_number_input = number_input(
-            "Set table states number...",
-            self.table.states_number,
-            Some(1),
-            &Message::TableStatesNumberChanged,
-        );
+        let table_states_number_input =
+            table_states_number_input(&self.table, &Message::TableStatesNumberChanged);
 
         let tasks_editor = table_tasks_editor(&self.table, &Message::TableTaskChanged);
 

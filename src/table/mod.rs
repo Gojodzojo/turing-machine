@@ -1,11 +1,12 @@
 pub mod table_characters_input;
+pub mod table_states_number_input;
 pub mod table_tasks_editor;
 
 use crate::{constants::EMPTY_CHAR, task::Task};
 
 pub struct Table {
     //// Number of possible states
-    pub states_number: usize,
+    states_number: usize,
 
     /// Characters used to execute the right task.
     /// They are not sorted.
@@ -96,5 +97,18 @@ impl Table {
         }
 
         self.characters = filtered_new_characters;
+    }
+
+    pub fn change_states_number(&mut self, new_states_number: usize) {
+        if new_states_number < self.states_number {
+            self.tasks.drain(new_states_number..);
+        } else {
+            for _ in self.states_number..new_states_number {
+                self.tasks
+                    .push((0..self.characters.len()).map(|_| Task::new()).collect())
+            }
+        }
+
+        self.states_number = new_states_number;
     }
 }
