@@ -8,8 +8,6 @@ use iced::widget::{column as ui_column, container, row, text_input};
 use iced::{Element, Length, Sandbox, Settings};
 use number_input::number_input;
 use running_machine::RunningMachine;
-use table::table_characters_input::table_characters_input;
-use table::table_states_number_input::table_states_number_input;
 use table::{table_tasks_editor::table_tasks_editor, Table};
 use task::Task;
 
@@ -58,12 +56,12 @@ impl Sandbox for App {
         use Message::*;
 
         match message {
-            TableTaskChanged(task, row, column) => self.table.tasks[row][column] = task,
+            TableTaskChanged(task, row, column) => self.table.set_task(task, row, column),
             InitialTapeChanged(new_tape) => self.initial_tape = new_tape,
-            TableCharactersChanged(new_characters) => self.table.change_characters(new_characters),
+            TableCharactersChanged(new_characters) => self.table.set_characters(new_characters),
             InitialCursorPositionChanged(position) => self.innitial_cursor_position = position,
             TableStatesNumberChanged(new_states_number) => {
-                self.table.change_states_number(new_states_number)
+                self.table.set_states_number(new_states_number)
             }
         }
     }
@@ -84,11 +82,20 @@ impl Sandbox for App {
             &Message::InitialCursorPositionChanged,
         );
 
-        let table_characters_input =
-            table_characters_input(&self.table, &Message::TableCharactersChanged);
+        let table_characters_input = text_input(
+            "Set table characters...",
+            &self.table.get_characters(),
+            &Message::TableCharactersChanged,
+        )
+        .padding(10)
+        .size(20);
 
-        let table_states_number_input =
-            table_states_number_input(&self.table, &Message::TableStatesNumberChanged);
+        let table_states_number_input = number_input(
+            "Set table states number...",
+            self.table.get_states_number(),
+            Some(1),
+            &Message::TableStatesNumberChanged,
+        );
 
         let tasks_editor = table_tasks_editor(&self.table, &Message::TableTaskChanged);
 

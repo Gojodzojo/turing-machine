@@ -21,14 +21,11 @@ pub fn table_tasks_editor<'a, Message: 'a + Clone>(
     table: &Table,
     on_task_change: &'a impl Fn(Task, usize, usize) -> Message,
 ) -> Row<'a, Message> {
-    let mut sorted_old_characters: Vec<_> = table.characters.chars().collect();
-    sorted_old_characters.sort();
-
     let mut tasks_editor: Row<Message> =
         row![vertical_rule(0)]
             .align_items(Alignment::Fill)
             .width(Length::Units(
-                (1 + sorted_old_characters.len() as u16) * CELL_WIDTH,
+                (1 + table.sorted_characters.len() as u16) * CELL_WIDTH,
             ));
 
     let mut first_column = ui_column![
@@ -47,7 +44,7 @@ pub fn table_tasks_editor<'a, Message: 'a + Clone>(
 
     tasks_editor = tasks_editor.push(first_column).push(vertical_rule(0));
 
-    for (column_index, char) in sorted_old_characters.iter().enumerate() {
+    for (column_index, char) in table.sorted_characters.iter().enumerate() {
         let mut col = ui_column![
             horizontal_rule(0),
             task_editor_cell(vec![text(char).into()]),
