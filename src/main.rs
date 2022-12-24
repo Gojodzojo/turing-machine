@@ -1,14 +1,17 @@
 mod constants;
+mod machine;
 mod number_input;
-mod running_machine;
 mod table;
+mod tape;
 mod task;
 
 use iced::widget::{column as ui_column, container, row, text_input};
 use iced::{Element, Length, Sandbox, Settings};
+use machine::Machine;
 use number_input::number_input;
-use running_machine::RunningMachine;
 use table::{table_tasks_editor::table_tasks_editor, Table};
+use tape::create_tape_preview::create_tape_preview;
+use tape::Tape;
 use task::Task;
 
 pub fn main() -> iced::Result {
@@ -17,15 +20,14 @@ pub fn main() -> iced::Result {
 
 struct App {
     table: Table,
-    initial_tape: String,
-    innitial_cursor_position: isize,
-    running_machine: RunningMachine,
+    machine: Machine,
+    tape: Tape,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    InitialTapeChanged(String),
-    InitialCursorPositionChanged(isize),
+    TapeInputCharsChanged(String),
+    TapeInputCursorPositionChanged(isize),
     TableCharactersChanged(String),
     TableStatesNumberChanged(usize),
     TableTaskChanged(Task, usize, usize),
@@ -35,16 +37,10 @@ impl Sandbox for App {
     type Message = Message;
 
     fn new() -> Self {
-        let table = Table::new_empty();
-        let initial_tape = String::new();
-        let innitial_cursor_position = 0;
-        let running_machine = RunningMachine::new(initial_tape.clone(), innitial_cursor_position);
-
         Self {
-            table,
-            initial_tape,
-            innitial_cursor_position,
-            running_machine,
+            table: Table::new_empty(),
+            machine: Machine::new(),
+            tape: Tape::new(),
         }
     }
 
@@ -56,10 +52,12 @@ impl Sandbox for App {
         use Message::*;
 
         match message {
+            TapeInputCharsChanged(new_chars) => self.tape.set_input_chars(new_chars),
             TableTaskChanged(task, row, column) => self.table.set_task(task, row, column),
-            InitialTapeChanged(new_tape) => self.initial_tape = new_tape,
             TableCharactersChanged(new_characters) => self.table.set_characters(new_characters),
-            InitialCursorPositionChanged(position) => self.innitial_cursor_position = position,
+            TapeInputCursorPositionChanged(position) => {
+                self.tape.set_input_cursor_position(position)
+            }
             TableStatesNumberChanged(new_states_number) => {
                 self.table.set_states_number(new_states_number)
             }
@@ -69,17 +67,17 @@ impl Sandbox for App {
     fn view(&self) -> Element<Self::Message> {
         let initial_tape_input = text_input(
             "Set initial tape...",
-            &self.initial_tape,
-            Message::InitialTapeChanged,
+            self.tape.get_input_chars(),
+            Message::TapeInputCharsChanged,
         )
         .padding(10)
         .size(20);
 
         let initial_cursor_position_input = number_input(
             "Set initial cursor position...",
-            self.innitial_cursor_position,
+            self.tape.get_input_cursor_position(),
             None,
-            &Message::InitialCursorPositionChanged,
+            &Message::TapeInputCursorPositionChanged,
         );
 
         let table_characters_input = text_input(
@@ -99,23 +97,27 @@ impl Sandbox for App {
 
         let tasks_editor = table_tasks_editor(&self.table, &Message::TableTaskChanged);
 
-        let content = row![
-            ui_column![
-                "Tape text",
-                initial_tape_input,
-                "Cursor position",
-                initial_cursor_position_input,
-                "Table states number",
-                table_states_number_input,
-                "Table characters",
-                table_characters_input,
+        let content = ui_column![
+            create_tape_preview(&self.tape),
+            row![
+                ui_column![
+                    "Tape text",
+                    initial_tape_input,
+                    "Cursor position",
+                    initial_cursor_position_input,
+                    "Table states number",
+                    table_states_number_input,
+                    "Table characters",
+                    table_characters_input,
+                ]
+                .max_width(200)
+                .spacing(10),
+                tasks_editor
             ]
-            .max_width(200)
-            .spacing(10),
-            tasks_editor
+            .spacing(20)
+            .padding(20)
         ]
-        .spacing(20)
-        .padding(20);
+        .align_items(iced::Alignment::Center);
 
         container(content)
             .width(Length::Fill)
