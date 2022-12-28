@@ -67,6 +67,10 @@ impl Tape {
         self.input_cursor_position = input_cursor_position;
     }
 
+    pub fn get_position_zero(&self) -> isize {
+        self.position_zero
+    }
+
     /// Sets tape_cursor_position to input_cursor_position,
     /// sets tape_chars to input_chars with EMPTY_CHARs added to front and back to match MAX_TAPE_CHARS_NUMBER length,
     /// sets position_zero to index in the tape_chars where the first character of input_chars is stored.
