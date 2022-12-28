@@ -1,5 +1,3 @@
-use std::iter::repeat;
-
 use iced::widget::{column as ui_column, text, Column};
 
 use crate::constants::{MAX_TAPE_CHARS_NUMBER, TAPE_FONT};

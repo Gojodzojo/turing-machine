@@ -51,7 +51,8 @@ impl Tape {
             self.input_chars.drain(MAX_TAPE_CHARS_NUMBER..);
         }
 
-        self.reset()
+        self.reset();
+        self.set_input_cursor_position(self.input_cursor_position);
     }
 
     pub fn get_input_cursor_position(&self) -> isize {
@@ -63,6 +64,17 @@ impl Tape {
     }
 
     pub fn set_input_cursor_position(&mut self, input_cursor_position: isize) {
+        let min_position = -self.position_zero;
+        let max_position = MAX_TAPE_CHARS_NUMBER as isize - self.position_zero - 1;
+
+        let input_cursor_position = if input_cursor_position <= min_position {
+            min_position
+        } else if input_cursor_position >= max_position {
+            max_position
+        } else {
+            input_cursor_position
+        };
+
         self.tape_cursor_position = input_cursor_position;
         self.input_cursor_position = input_cursor_position;
     }

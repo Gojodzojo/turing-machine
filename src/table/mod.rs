@@ -1,6 +1,9 @@
 pub mod table_tasks_editor;
 
-use crate::{constants::EMPTY_CHAR, task::Task};
+use crate::{
+    constants::{EMPTY_CHAR, MAX_STATES_NUMBER, MIN_STATES_NUMBER},
+    task::Task,
+};
 
 pub struct Table {
     //// Number of possible states
@@ -124,6 +127,14 @@ impl Table {
     }
 
     pub fn set_states_number(&mut self, new_states_number: usize) {
+        let new_states_number = if new_states_number <= MIN_STATES_NUMBER {
+            MIN_STATES_NUMBER
+        } else if new_states_number >= MAX_STATES_NUMBER {
+            MAX_STATES_NUMBER
+        } else {
+            new_states_number
+        };
+
         if new_states_number < self.states_number {
             self.tasks.drain(new_states_number..);
         } else {

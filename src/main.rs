@@ -5,6 +5,7 @@ mod table;
 mod tape;
 mod task;
 
+use constants::MAX_TAPE_CHARS_NUMBER;
 use iced::widget::{column as ui_column, container, row, text_input};
 use iced::{Element, Length, Sandbox, Settings};
 use machine::Machine;
@@ -76,7 +77,6 @@ impl Sandbox for App {
         let initial_cursor_position_input = number_input(
             "Set initial cursor position...",
             self.tape.get_input_cursor_position(),
-            None,
             &Message::TapeInputCursorPositionChanged,
         );
 
@@ -91,7 +91,6 @@ impl Sandbox for App {
         let table_states_number_input = number_input(
             "Set table states number...",
             self.table.get_states_number(),
-            Some(1),
             &Message::TableStatesNumberChanged,
         );
 
