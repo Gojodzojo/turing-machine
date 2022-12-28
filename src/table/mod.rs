@@ -1,7 +1,7 @@
 pub mod table_tasks_editor;
 
 use crate::{
-    constants::{EMPTY_CHAR, MAX_STATES_NUMBER, MIN_STATES_NUMBER},
+    constants::{DEFAULT_TABLE_CHARS, MAX_STATES_NUMBER, MIN_STATES_NUMBER},
     task::Task,
 };
 
@@ -26,7 +26,7 @@ pub struct Table {
 impl Table {
     pub fn new_empty() -> Self {
         let states_number = 5;
-        let characters: String = format!("{}{}", EMPTY_CHAR, "abcde");
+        let characters: String = DEFAULT_TABLE_CHARS.to_string();
         let mut sorted_characters: Vec<_> = characters.chars().collect();
         sorted_characters.sort();
         let tasks: Vec<Vec<Task>> = (0..states_number)

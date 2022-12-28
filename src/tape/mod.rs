@@ -2,7 +2,7 @@ pub mod create_tape_preview;
 
 use std::iter::repeat;
 
-use crate::constants::{EMPTY_CHAR, MAX_TAPE_CHARS_NUMBER};
+use crate::constants::{EMPTY_CHAR, TAPE_CHARS_NUMBER};
 
 pub struct Tape {
     /// Characters that the user has given as an initial tape.
@@ -30,9 +30,9 @@ impl Tape {
         Self {
             input_chars: "".to_string(),
             input_cursor_position: 0,
-            tape_chars: repeat(EMPTY_CHAR).take(MAX_TAPE_CHARS_NUMBER).collect(),
+            tape_chars: repeat(EMPTY_CHAR).take(TAPE_CHARS_NUMBER).collect(),
             tape_cursor_position: 0,
-            position_zero: MAX_TAPE_CHARS_NUMBER as isize / 2,
+            position_zero: TAPE_CHARS_NUMBER as isize / 2,
         }
     }
 
@@ -47,8 +47,8 @@ impl Tape {
     pub fn set_input_chars(&mut self, new_chars: String) {
         self.input_chars = new_chars;
 
-        if self.input_chars.len() > MAX_TAPE_CHARS_NUMBER {
-            self.input_chars.drain(MAX_TAPE_CHARS_NUMBER..);
+        if self.input_chars.len() > TAPE_CHARS_NUMBER {
+            self.input_chars.drain(TAPE_CHARS_NUMBER..);
         }
 
         self.reset();
@@ -65,7 +65,7 @@ impl Tape {
 
     pub fn set_input_cursor_position(&mut self, input_cursor_position: isize) {
         let min_position = -self.position_zero;
-        let max_position = MAX_TAPE_CHARS_NUMBER as isize - self.position_zero - 1;
+        let max_position = TAPE_CHARS_NUMBER as isize - self.position_zero - 1;
 
         let input_cursor_position = if input_cursor_position <= min_position {
             min_position
@@ -89,10 +89,10 @@ impl Tape {
     pub fn reset(&mut self) {
         self.tape_cursor_position = self.input_cursor_position;
 
-        let replace_start_index = (MAX_TAPE_CHARS_NUMBER - self.input_chars.len()) / 2;
+        let replace_start_index = (TAPE_CHARS_NUMBER - self.input_chars.len()) / 2;
         let replace_range = replace_start_index..(replace_start_index + self.input_chars.len());
 
-        self.tape_chars = repeat(EMPTY_CHAR).take(MAX_TAPE_CHARS_NUMBER).collect();
+        self.tape_chars = repeat(EMPTY_CHAR).take(TAPE_CHARS_NUMBER).collect();
         self.tape_chars
             .replace_range(replace_range, &self.input_chars);
 
@@ -122,7 +122,7 @@ impl Tape {
     }
 
     pub fn move_cursor_right(&mut self) -> Result<(), ()> {
-        if self.position_zero + self.tape_cursor_position + 1 < MAX_TAPE_CHARS_NUMBER as isize {
+        if self.position_zero + self.tape_cursor_position + 1 < TAPE_CHARS_NUMBER as isize {
             self.tape_cursor_position += 1;
             Ok(())
         } else {

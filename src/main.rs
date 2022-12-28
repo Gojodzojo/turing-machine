@@ -5,7 +5,7 @@ mod table;
 mod tape;
 mod task;
 
-use constants::MAX_TAPE_CHARS_NUMBER;
+use constants::TAPE_CHARS_NUMBER;
 use iced::widget::{column as ui_column, container, row, text_input};
 use iced::{Element, Length, Sandbox, Settings};
 use machine::Machine;
