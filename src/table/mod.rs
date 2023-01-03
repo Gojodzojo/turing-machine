@@ -1,4 +1,4 @@
-pub mod table_tasks_editor;
+pub mod create_tasks_table;
 
 use crate::{
     constants::{DEFAULT_TABLE_CHARS, MAX_STATES_NUMBER, MIN_STATES_NUMBER},
