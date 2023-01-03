@@ -7,9 +7,10 @@ use super::Tape;
 const SPACES: &str = const_str::repeat!(" ", TAPE_CHARS_NUMBER);
 
 pub fn create_tape_preview<'a, Message: 'a + Clone>(tape: &Tape) -> Column<'a, Message> {
-    let margin_left = (tape.get_position_zero() + tape.get_tape_cursor_position()) as usize;
+    let margin_left =
+        (tape.get_first_char_position() as isize + tape.get_cursor_position()) as usize;
     ui_column![ui_column![
-        text(tape.get_tape_chars())
+        text(tape.get_chars_with_margin())
             .size(TAPE_TEXT_SIZE)
             .font(TAPE_FONT),
         text(format!("{}^", &SPACES[0..margin_left]))

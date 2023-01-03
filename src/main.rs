@@ -22,6 +22,7 @@ struct App {
     table: Table,
     machine: Machine,
     tape: Tape,
+    is_machine_running: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -41,6 +42,7 @@ impl Sandbox for App {
 
     fn new() -> Self {
         Self {
+            is_machine_running: false,
             table: Table::new_empty(),
             machine: Machine::new(),
             tape: Tape::new(),
@@ -55,23 +57,17 @@ impl Sandbox for App {
         use Message::*;
 
         match message {
-            TapeInputCharsChanged(new_chars) => self.tape.set_input_chars(new_chars),
+            TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
+            TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
             TableTaskChanged(task, row, column) => self.table.set_task(task, row, column),
             TableCharactersChanged(new_characters) => self.table.set_characters(new_characters),
-            MachineStarted => self.machine.start(),
-            MachineNextStep => {
-                self.machine.next_step(&self.table, &mut self.tape);
-                if !self.machine.is_running() {
-                    self.tape.reset();
-                }
+            MachineNextStep => self.machine.next_step(&self.table),
+            MachineStopped => self.is_machine_running = false,
+            MachineStarted => {
+                self.machine.reset(self.tape.clone());
+                self.is_machine_running = true;
             }
-            MachineStopped => {
-                self.machine.stop();
-                self.tape.reset();
-            }
-            TapeInputCursorPositionChanged(position) => {
-                self.tape.set_input_cursor_position(position)
-            }
+
             TableStatesNumberChanged(new_states_number) => {
                 self.table.set_states_number(new_states_number)
             }
@@ -79,7 +75,7 @@ impl Sandbox for App {
     }
 
     fn view(&self) -> Element<Self::Message> {
-        let left_column = if self.machine.is_running() {
+        let left_column = if self.is_machine_running {
             let stop_button = button("Stop")
                 .padding(10)
                 .width(Length::Fill)
@@ -88,10 +84,15 @@ impl Sandbox for App {
             let step = text(format!("Step: {}", self.machine.get_step()));
             let state = text(format!("State: {}", self.machine.get_state()));
 
-            let next_step_button = button("Next step")
-                .padding(10)
-                .width(Length::Fill)
-                .on_press(Message::MachineNextStep);
+            let next_step_button: Element<_> = if self.machine.is_halted() {
+                text("Machine halted").into()
+            } else {
+                button("Next step")
+                    .padding(10)
+                    .width(Length::Fill)
+                    .on_press(Message::MachineNextStep)
+                    .into()
+            };
 
             ui_column![step, state, next_step_button, stop_button]
                 .width(Length::Units(200))
@@ -99,7 +100,7 @@ impl Sandbox for App {
         } else {
             let initial_tape_input = text_input(
                 "Set initial tape...",
-                self.tape.get_input_chars(),
+                self.tape.get_chars_without_margin(),
                 Message::TapeInputCharsChanged,
             )
             .padding(10)
@@ -107,7 +108,7 @@ impl Sandbox for App {
 
             let initial_cursor_position_input = number_input(
                 "Set initial cursor position...",
-                self.tape.get_input_cursor_position(),
+                self.tape.get_cursor_position(),
                 &Message::TapeInputCursorPositionChanged,
             );
 
@@ -151,12 +152,15 @@ impl Sandbox for App {
             (self.tape.get_current_char(), self.machine.get_state()),
         );
 
-        let content = ui_column![
-            create_tape_preview(&self.tape),
-            row![left_column, tasks_editor].spacing(40)
-        ]
-        .spacing(20)
-        .padding(40);
+        let tape_preview = if self.is_machine_running {
+            create_tape_preview(self.machine.get_tape())
+        } else {
+            create_tape_preview(&self.tape)
+        };
+
+        let content = ui_column![tape_preview, row![left_column, tasks_editor].spacing(40)]
+            .spacing(20)
+            .padding(40);
 
         container(content)
             .width(Length::Fill)
