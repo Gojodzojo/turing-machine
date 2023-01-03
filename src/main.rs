@@ -80,17 +80,21 @@ impl Sandbox for App {
 
     fn view(&self) -> Element<Self::Message> {
         let left_column = if self.machine.is_running() {
-            let stop_button = button("Stop").padding(10).on_press(Message::MachineStopped);
+            let stop_button = button("Stop")
+                .padding(10)
+                .width(Length::Fill)
+                .on_press(Message::MachineStopped);
 
             let step = text(format!("Step: {}", self.machine.get_step()));
             let state = text(format!("State: {}", self.machine.get_state()));
 
             let next_step_button = button("Next step")
                 .padding(10)
+                .width(Length::Fill)
                 .on_press(Message::MachineNextStep);
 
             ui_column![step, state, next_step_button, stop_button]
-                .max_width(200)
+                .width(Length::Units(200))
                 .spacing(10)
         } else {
             let initial_tape_input = text_input(
@@ -123,6 +127,7 @@ impl Sandbox for App {
 
             let start_button = button("Start")
                 .padding(10)
+                .width(Length::Fill)
                 .on_press(Message::MachineStarted);
 
             ui_column![
@@ -136,23 +141,26 @@ impl Sandbox for App {
                 table_characters_input,
                 start_button,
             ]
-            .max_width(200)
+            .width(Length::Units(200))
             .spacing(10)
         };
 
-        let tasks_editor = table_tasks_editor(&self.table, &Message::TableTaskChanged);
+        let tasks_editor = table_tasks_editor(
+            &self.table,
+            &Message::TableTaskChanged,
+            (self.tape.get_current_char(), self.machine.get_state()),
+        );
 
         let content = ui_column![
             create_tape_preview(&self.tape),
-            row![left_column, tasks_editor].spacing(20).padding(20)
+            row![left_column, tasks_editor].spacing(40)
         ]
-        .align_items(iced::Alignment::Center);
+        .spacing(20)
+        .padding(40);
 
         container(content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .center_x()
-            .center_y()
             .into()
     }
 }

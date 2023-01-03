@@ -1,10 +1,10 @@
 use iced::{
-    alignment,
+    alignment, theme,
     widget::{
-        column as ui_column, container, horizontal_rule, row, text, text_input as txt_input,
+        self, column as ui_column, container, horizontal_rule, row, text, text_input as txt_input,
         vertical_rule, Container, Row,
     },
-    Alignment, Element, Length,
+    Alignment, Background, Color, Element, Length, Theme,
 };
 
 use crate::{
@@ -20,6 +20,7 @@ const CELL_WIDTH: u16 = 125;
 pub fn table_tasks_editor<'a, Message: 'a + Clone>(
     table: &Table,
     on_task_change: &'a impl Fn(Task, usize, usize) -> Message,
+    selected_cell: (char, usize),
 ) -> Row<'a, Message> {
     let mut tasks_editor: Row<Message> =
         row![vertical_rule(0)]
@@ -30,7 +31,7 @@ pub fn table_tasks_editor<'a, Message: 'a + Clone>(
 
     let mut first_column = ui_column![
         horizontal_rule(0),
-        task_editor_cell(vec![text(" ").into()]),
+        task_editor_cell(vec![text(" ").into()], false),
         horizontal_rule(0)
     ]
     .align_items(Alignment::Center)
@@ -38,7 +39,7 @@ pub fn table_tasks_editor<'a, Message: 'a + Clone>(
 
     for i in 0..table.states_number {
         first_column = first_column
-            .push(task_editor_cell(vec![text(i).into()]))
+            .push(task_editor_cell(vec![text(i).into()], false))
             .push(horizontal_rule(0));
     }
 
@@ -47,7 +48,7 @@ pub fn table_tasks_editor<'a, Message: 'a + Clone>(
     for (column_index, char) in table.sorted_characters.iter().enumerate() {
         let mut col = ui_column![
             horizontal_rule(0),
-            task_editor_cell(vec![text(char).into()]),
+            task_editor_cell(vec![text(char).into()], false),
             horizontal_rule(0)
         ]
         .align_items(Alignment::Center)
@@ -109,17 +110,22 @@ pub fn table_tasks_editor<'a, Message: 'a + Clone>(
                 on_task_change(task, row_index, column_index)
             };
 
-            col = col.push(task_editor_cell(vec![
-                txt_input("state", &format!("{}", state), update_state)
-                    .width(Length::Units(20))
-                    .into(),
-                txt_input("char", &format!("{}", character), update_char)
-                    .width(Length::Units(10))
-                    .into(),
-                txt_input("direction", &format!("{}", direction), update_direction)
-                    .width(Length::Units(10))
-                    .into(),
-            ]));
+            let is_selected = selected_cell.0 == *char && selected_cell.1 == row_index;
+
+            col = col.push(task_editor_cell(
+                vec![
+                    txt_input("state", &format!("{}", state), update_state)
+                        .width(Length::Units(20))
+                        .into(),
+                    txt_input("char", &format!("{}", character), update_char)
+                        .width(Length::Units(10))
+                        .into(),
+                    txt_input("direction", &format!("{}", direction), update_direction)
+                        .width(Length::Units(10))
+                        .into(),
+                ],
+                is_selected,
+            ));
             col = col.push(horizontal_rule(0));
         }
 
@@ -132,9 +138,22 @@ pub fn table_tasks_editor<'a, Message: 'a + Clone>(
 
 fn task_editor_cell<'a, Message: 'a + Clone>(
     children: Vec<Element<'a, Message>>,
+    is_selected: bool,
 ) -> Container<'a, Message> {
+    let theme = if is_selected {
+        let f: fn(&Theme) -> container::Appearance = |_| widget::container::Appearance {
+            background: Some(Background::Color(Color::from_rgba8(0, 0, 0, 0.3))),
+            ..Default::default()
+        };
+        theme::Container::from(f)
+    } else {
+        theme::Container::default()
+    };
+
     container(Row::with_children(children).spacing(5))
         .align_x(alignment::Horizontal::Center)
         .align_y(alignment::Vertical::Center)
         .height(Length::Units(CELL_HEIGHT))
+        .width(Length::Fill)
+        .style(theme)
 }
