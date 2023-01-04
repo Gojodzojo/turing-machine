@@ -1,3 +1,5 @@
+#![feature(iter_array_chunks)]
+
 mod constants;
 mod machine;
 mod number_input;
@@ -7,9 +9,10 @@ mod task;
 
 use constants::DEFAULT_STATE;
 use iced::widget::{button, column as ui_column, container, row, text, text_input, Column, Row};
-use iced::{Element, Length, Sandbox, Settings};
+use iced::{executor, Application, Command, Element, Length, Settings, Theme};
 use machine::Machine;
 use number_input::number_input;
+use rfd::{FileDialog, MessageButtons, MessageDialog, MessageLevel};
 use table::create_tasks_table::create_tasks_table;
 use table::Table;
 use tape::create_tape_preview::create_tape_preview;
@@ -34,46 +37,63 @@ enum Message {
     TableCharactersChanged(String),
     TableStatesNumberChanged(usize),
     TableTaskChanged(Task, usize, usize),
+    FileLoaded(Option<Table>),
+    OpenFileClicked,
     MachineStarted,
     MachineStopped,
     MachineNextStep,
 }
 
-impl Sandbox for App {
+impl Application for App {
     type Message = Message;
+    type Theme = Theme;
+    type Executor = executor::Default;
+    type Flags = ();
 
-    fn new() -> Self {
-        Self {
-            is_machine_running: false,
-            table: Table::new_empty(),
-            machine: Machine::new(),
-            tape: Tape::new(),
-        }
+    fn new(_flags: ()) -> (Self, Command<Message>) {
+        (
+            Self {
+                is_machine_running: false,
+                table: Table::new_empty(),
+                machine: Machine::new(),
+                tape: Tape::new(),
+            },
+            Command::none(),
+        )
     }
 
     fn title(&self) -> String {
         "Turing Machine".into()
     }
 
-    fn update(&mut self, message: Self::Message) {
+    fn update(&mut self, message: Self::Message) -> Command<Message> {
         use Message::*;
 
         match message {
             TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
             TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
-            TableTaskChanged(task, row, column) => self.table.set_task(task, row, column),
-            TableCharactersChanged(new_characters) => self.table.set_characters(new_characters),
+            TableCharactersChanged(new_characters) => self.table.set_characters(&new_characters),
+            OpenFileClicked => return Command::perform(open_file(), FileLoaded),
             MachineNextStep => self.machine.next_step(&self.table),
             MachineStopped => self.is_machine_running = false,
             MachineStarted => {
                 self.machine.reset(self.tape.clone());
                 self.is_machine_running = true;
             }
-
+            TableTaskChanged(task, row, column) => {
+                self.table.set_task_by_position(task, row, column)
+            }
             TableStatesNumberChanged(new_states_number) => {
                 self.table.set_states_number(new_states_number)
             }
-        }
+            FileLoaded(table) => {
+                if let Some(table) = table {
+                    self.table = table;
+                }
+            }
+        };
+
+        return Command::none();
     }
 
     fn view(&self) -> Element<Self::Message> {
@@ -128,7 +148,7 @@ impl App {
             self.machine.get_state(),
         );
 
-        let tape_preview = create_tape_preview(&self.tape);
+        let tape_preview = create_tape_preview(self.machine.get_tape());
 
         (left_column, tasks_table, tape_preview)
     }
@@ -170,6 +190,11 @@ impl App {
                 .width(Length::Fill)
                 .on_press(Message::MachineStarted);
 
+            let open_file_button = button("Open file")
+                .padding(10)
+                .width(Length::Fill)
+                .on_press(Message::OpenFileClicked);
+
             ui_column![
                 "Tape text",
                 initial_tape_input,
@@ -180,6 +205,7 @@ impl App {
                 "Table characters",
                 table_characters_input,
                 start_button,
+                open_file_button
             ]
             .width(Length::Units(200))
             .spacing(10)
@@ -193,8 +219,28 @@ impl App {
             DEFAULT_STATE,
         );
 
-        let tape_preview = create_tape_preview(self.machine.get_tape());
+        let tape_preview = create_tape_preview(&self.tape);
 
         (left_column, tasks_table, tape_preview)
     }
+}
+
+async fn open_file() -> Option<Table> {
+    let path = FileDialog::new()
+        .add_filter("Turing Machine file", &["txt", "mt"])
+        .pick_file();
+
+    if let Some(path) = path {
+        if let Ok(table) = Table::new_from_file(path) {
+            return Some(table);
+        }
+        MessageDialog::new()
+            .set_level(MessageLevel::Warning)
+            .set_title("Wrong file format")
+            .set_description("Wrong file format")
+            .set_buttons(MessageButtons::Ok)
+            .show();
+    }
+
+    return None;
 }

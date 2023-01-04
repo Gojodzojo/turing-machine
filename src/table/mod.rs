@@ -2,9 +2,12 @@ pub mod create_tasks_table;
 
 use crate::{
     constants::{DEFAULT_TABLE_CHARS, MAX_STATES_NUMBER, MIN_STATES_NUMBER},
-    task::Task,
+    task::{Direction, Task},
 };
+use std::io::{prelude::*, Error, ErrorKind};
+use std::{fs::File, io, path::PathBuf};
 
+#[derive(Debug, Clone)]
 pub struct Table {
     //// Number of possible states
     states_number: usize,
@@ -41,6 +44,52 @@ impl Table {
         }
     }
 
+    pub fn new_from_file(path: PathBuf) -> Result<Self, Error> {
+        let mut table = Self::new_empty();
+        let file = File::open(path)?;
+        let buffer = io::BufReader::new(file);
+        let mut lines_iter = buffer.lines();
+
+        let first_line = lines_iter
+            .next()
+            .ok_or(Error::from(ErrorKind::UnexpectedEof))??
+            .filter_characters();
+
+        table.set_characters(&first_line);
+
+        for (task_state, line) in lines_iter.enumerate() {
+            let line = line?;
+            let mut task_data_iterator = line.split_whitespace().array_chunks::<3>();
+
+            table.set_states_number(task_state + 1);
+
+            for task_character in first_line.chars() {
+                let [state, character, direction] = task_data_iterator
+                    .next()
+                    .ok_or(Error::from(ErrorKind::InvalidData))?;
+
+                let state: usize = state.parse().or(Err(Error::from(ErrorKind::InvalidData)))?;
+                let character = character.chars().next().unwrap();
+                let direction: Direction = direction
+                    .chars()
+                    .next()
+                    .unwrap()
+                    .try_into()
+                    .or(Err(Error::from(ErrorKind::InvalidData)))?;
+
+                let task = Task {
+                    state,
+                    character,
+                    direction,
+                };
+
+                table.set_task_by_state_and_character(task, task_state, task_character);
+            }
+        }
+
+        Ok(table)
+    }
+
     pub fn get_task(&self, state: usize, character: char) -> Option<&Task> {
         let char_index = self
             .sorted_characters
@@ -50,23 +99,31 @@ impl Table {
         self.tasks.get(state)?.get(char_index)
     }
 
-    pub fn set_task(&mut self, task: Task, row: usize, column: usize) {
+    pub fn set_task_by_position(&mut self, task: Task, row: usize, column: usize) {
         self.tasks[row][column] = task
+    }
+
+    pub fn set_task_by_state_and_character(
+        &mut self,
+        task: Task,
+        state: usize,
+        character: char,
+    ) -> Option<()> {
+        let char_index = self
+            .sorted_characters
+            .iter()
+            .position(|c| *c == character)?;
+
+        *self.tasks.get_mut(state)?.get_mut(char_index)? = task;
+        Some(())
     }
 
     pub fn get_characters(&self) -> &String {
         &self.characters
     }
 
-    pub fn set_characters(&mut self, new_characters: String) {
-        // Return string without duplicated characters
-        let filtered_new_characters = new_characters.chars().fold("".to_string(), |acc, c| {
-            if !acc.contains(c) {
-                acc + &c.to_string()
-            } else {
-                acc
-            }
-        });
+    pub fn set_characters(&mut self, new_characters: &String) {
+        let filtered_new_characters = new_characters.filter_characters();
 
         let removed_characters: String = self
             .characters
@@ -145,5 +202,22 @@ impl Table {
         }
 
         self.states_number = new_states_number;
+    }
+}
+
+trait FilterCharacters {
+    /// Return string without duplicated characters and whitespaces
+    fn filter_characters(&self) -> String;
+}
+
+impl FilterCharacters for str {
+    fn filter_characters(&self) -> String {
+        self.chars().fold("".to_string(), |acc, c| {
+            if !acc.contains(c) && !c.is_whitespace() {
+                acc + &c.to_string()
+            } else {
+                acc
+            }
+        })
     }
 }
