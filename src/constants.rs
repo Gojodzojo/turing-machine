@@ -2,6 +2,7 @@ use crate::task::Direction;
 use iced::Font;
 
 pub const FILE_EXTENSION: &str = "mt";
+pub const DEFAULT_FILENAME: &str = const_str::concat!("new.", FILE_EXTENSION);
 pub const EMPTY_CHAR: char = '#';
 pub const DEFAULT_TABLE_CHARS: &str = const_str::concat!(EMPTY_CHAR, "abc");
 pub const DEFAULT_STATE: usize = 0;

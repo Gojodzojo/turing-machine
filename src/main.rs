@@ -7,14 +7,15 @@ mod table;
 mod tape;
 mod task;
 
-use constants::{DEFAULT_STATE, FILE_EXTENSION};
+use constants::{DEFAULT_FILENAME, DEFAULT_STATE, FILE_EXTENSION};
 use iced::widget::{button, column as ui_column, container, row, text, text_input, Column, Row};
 use iced::{executor, Application, Command, Element, Length, Settings, Theme};
 use machine::Machine;
 use number_input::number_input;
 use rfd::{FileDialog, MessageButtons, MessageDialog, MessageLevel};
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self, BufReader};
+use std::path::PathBuf;
 use table::create_tasks_table::create_tasks_table;
 use table::Table;
 use tape::create_tape_preview::create_tape_preview;
@@ -30,6 +31,8 @@ struct App {
     machine: Machine,
     tape: Tape,
     is_machine_running: bool,
+    file_path: Option<PathBuf>,
+    was_modified: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -39,13 +42,16 @@ enum Message {
     TableCharactersChanged(String),
     TableStatesNumberChanged(usize),
     TableTaskChanged(Task, usize, usize),
-    FileLoaded(Option<Table>),
-    FileSaved(()),
+    FileToOpenPicked(Option<PathBuf>),
+    FileToSavePicked(Option<PathBuf>),
+    NewFileClicked,
     OpenFileClicked,
+    SaveFileClicked,
     SaveFileAsClicked,
     MachineStarted,
     MachineStopped,
     MachineNextStep,
+    ErrorDialogClosed(()),
 }
 
 impl Application for App {
@@ -61,45 +67,65 @@ impl Application for App {
                 table: Table::new_empty(),
                 machine: Machine::new(),
                 tape: Tape::new(),
+                file_path: None,
+                was_modified: true,
             },
             Command::none(),
         )
     }
 
     fn title(&self) -> String {
-        "Turing Machine".into()
+        let filename = match &self.file_path {
+            Some(path) => path.file_name().unwrap().to_str().unwrap(),
+            None => DEFAULT_FILENAME,
+        };
+
+        let modified_indicator = match self.was_modified {
+            true => "*",
+            false => "",
+        };
+
+        format!("Turing Machine - {}{}", filename, modified_indicator)
     }
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
         use Message::*;
 
         match message {
+            FileToOpenPicked(Some(path)) => return self.open_file(path),
+            FileToSavePicked(Some(path)) => return self.save_file(path),
             TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
             TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
-            TableCharactersChanged(new_characters) => self.table.set_characters(&new_characters),
-            OpenFileClicked => return Command::perform(open_file(), FileLoaded),
-            SaveFileAsClicked => {
-                let buffer = self.table.save_to_buffer();
-                return Command::perform(save_file_as(buffer), FileSaved);
-            }
             MachineNextStep => self.machine.next_step(&self.table),
             MachineStopped => self.is_machine_running = false,
+            NewFileClicked => self.new_file(),
+            OpenFileClicked => return Command::perform(pick_file_to_open(), FileToOpenPicked),
+            SaveFileClicked => {
+                return match &self.file_path {
+                    Some(path) => self.save_file(path.clone()),
+                    None => Command::perform(pick_file_to_save(DEFAULT_FILENAME), FileToSavePicked),
+                }
+            }
+            SaveFileAsClicked => {
+                return Command::perform(pick_file_to_save(DEFAULT_FILENAME), FileToSavePicked)
+            }
             MachineStarted => {
                 self.machine.reset(self.tape.clone());
                 self.is_machine_running = true;
             }
+            TableCharactersChanged(new_characters) => {
+                self.table.set_characters(&new_characters);
+                self.was_modified = true;
+            }
             TableTaskChanged(task, row, column) => {
-                self.table.set_task_by_position(task, row, column)
+                self.table.set_task_by_position(task, row, column);
+                self.was_modified = true;
             }
             TableStatesNumberChanged(new_states_number) => {
-                self.table.set_states_number(new_states_number)
+                self.table.set_states_number(new_states_number);
+                self.was_modified = true;
             }
-            FileLoaded(table) => {
-                if let Some(table) = table {
-                    self.table = table;
-                }
-            }
-            FileSaved(()) => {}
+            _ => {}
         };
 
         return Command::none();
@@ -124,6 +150,51 @@ impl Application for App {
 }
 
 impl App {
+    fn new_file(&mut self) {
+        self.table = Table::new_empty();
+        self.was_modified = true;
+        self.file_path = None;
+    }
+
+    fn open_file(&mut self, path: PathBuf) -> Command<Message> {
+        let res = || -> Result<(), io::Error> {
+            let file = File::open(&path)?;
+            let mut buffer = BufReader::new(file);
+            self.table = Table::new_from_buffer(&mut buffer)?;
+            self.was_modified = false;
+            self.file_path = Some(path);
+            Ok(())
+        };
+
+        if let Err(_) = res() {
+            return Command::perform(
+                show_error("Error", "Wrong file format"),
+                Message::ErrorDialogClosed,
+            );
+        }
+
+        return Command::none();
+    }
+
+    fn save_file(&mut self, path: PathBuf) -> Command<Message> {
+        let res = || -> Result<(), io::Error> {
+            let mut file = File::create(&path)?;
+            self.table.write_to_buffer(&mut file)?;
+            self.was_modified = false;
+            self.file_path = Some(path);
+            Ok(())
+        };
+
+        if let Err(_) = res() {
+            return Command::perform(
+                show_error("Error", "Failed to save the file"),
+                Message::ErrorDialogClosed,
+            );
+        }
+
+        return Command::none();
+    }
+
     fn get_running_machine_components(&self) -> (Column<Message>, Row<Message>, Column<Message>) {
         let left_column = {
             let stop_button = button("Stop")
@@ -199,10 +270,20 @@ impl App {
                 .width(Length::Fill)
                 .on_press(Message::MachineStarted);
 
+            let new_file_button = button("New file")
+                .padding(10)
+                .width(Length::Fill)
+                .on_press(Message::NewFileClicked);
+
             let open_file_button = button("Open file")
                 .padding(10)
                 .width(Length::Fill)
                 .on_press(Message::OpenFileClicked);
+
+            let save_file_button = button("Save file")
+                .padding(10)
+                .width(Length::Fill)
+                .on_press(Message::SaveFileClicked);
 
             let save_file_as_button = button("Save file as")
                 .padding(10)
@@ -219,7 +300,9 @@ impl App {
                 "Table characters",
                 table_characters_input,
                 start_button,
+                new_file_button,
                 open_file_button,
+                save_file_button,
                 save_file_as_button
             ]
             .width(Length::Units(200))
@@ -240,59 +323,38 @@ impl App {
     }
 }
 
-async fn open_file() -> Option<Table> {
-    let path = FileDialog::new()
-        .add_filter("Turing Machine file", &[FILE_EXTENSION])
-        .pick_file();
-
-    if let Some(path) = path {
-        if let Ok(table) = Table::new_from_file(path) {
-            return Some(table);
-        }
-        MessageDialog::new()
-            .set_level(MessageLevel::Warning)
-            .set_title("Error")
-            .set_description("Wrong file format")
-            .set_buttons(MessageButtons::Ok)
-            .show();
-    }
-
-    return None;
+async fn show_error(title: &str, description: &str) {
+    MessageDialog::new()
+        .set_level(MessageLevel::Error)
+        .set_title(title)
+        .set_description(description)
+        .set_buttons(MessageButtons::Ok)
+        .show();
 }
 
-async fn save_file_as(buffer: Result<Vec<u8>, io::Error>) {
-    let res = || -> Option<()> {
-        let buffer = buffer.ok()?;
-        let path = FileDialog::new()
-            .add_filter("Turing Machine file", &[FILE_EXTENSION])
-            .set_file_name("new.mt")
-            .save_file();
+async fn pick_file_to_open() -> Option<PathBuf> {
+    FileDialog::new()
+        .add_filter("Turing Machine file", &[FILE_EXTENSION])
+        .pick_file()
+}
 
-        if let None = path {
-            return Some(());
-        }
+async fn pick_file_to_save(default_filename: &str) -> Option<PathBuf> {
+    let path = FileDialog::new()
+        .add_filter("Turing Machine file", &[FILE_EXTENSION])
+        .set_file_name(default_filename)
+        .save_file();
 
-        let mut path = path.unwrap();
-
+    if let Some(mut path) = path {
         match path.extension() {
             Some(ext) if ext == FILE_EXTENSION => {}
             _ => {
                 let new_filename = format!("{}.{}", path.file_name()?.to_str()?, FILE_EXTENSION);
-                path.set_file_name(new_filename)
+                path.set_file_name(new_filename);
             }
         }
 
-        let mut file = File::create(path).ok()?;
-        file.write_all(&buffer).ok()?;
-        Some(())
-    };
-
-    if let None = res() {
-        MessageDialog::new()
-            .set_level(MessageLevel::Warning)
-            .set_title("Error")
-            .set_description("Failed to save the file")
-            .set_buttons(MessageButtons::Ok)
-            .show();
+        return Some(path);
     }
+
+    return None;
 }

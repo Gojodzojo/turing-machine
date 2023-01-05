@@ -5,7 +5,6 @@ use crate::{
     task::{Direction, Task},
 };
 use std::io::{prelude::*, Error, ErrorKind};
-use std::{fs::File, io, path::PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct Table {
@@ -44,10 +43,8 @@ impl Table {
         }
     }
 
-    pub fn new_from_file(path: PathBuf) -> Result<Self, Error> {
+    pub fn new_from_buffer(buffer: &mut impl BufRead) -> Result<Self, Error> {
         let mut table = Self::new_empty();
-        let file = File::open(path)?;
-        let buffer = io::BufReader::new(file);
         let mut lines_iter = buffer.lines();
 
         let first_line = lines_iter
@@ -90,15 +87,13 @@ impl Table {
         Ok(table)
     }
 
-    pub fn save_to_buffer(&self) -> Result<Vec<u8>, Error> {
-        let mut buffer = vec![];
-
+    pub fn write_to_buffer(&self, buffer: &mut impl Write) -> Result<(), Error> {
         let mut line = self
             .characters
             .chars()
             .fold(String::new(), |acc, c| acc + &format!("      {c}   "));
 
-        writeln!(&mut buffer, "{}", &line[4..])?;
+        writeln!(buffer, "{}", &line[4..])?;
 
         for row in &self.tasks {
             line.clear();
@@ -110,10 +105,10 @@ impl Table {
                 );
             }
 
-            writeln!(&mut buffer, "{}", &line[4..])?;
+            writeln!(buffer, "{}", &line[4..])?;
         }
 
-        Ok(buffer)
+        Ok(())
     }
 
     pub fn get_task(&self, state: usize, character: char) -> Option<&Task> {
