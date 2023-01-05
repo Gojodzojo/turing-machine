@@ -7,12 +7,14 @@ mod table;
 mod tape;
 mod task;
 
-use constants::DEFAULT_STATE;
+use constants::{DEFAULT_STATE, FILE_EXTENSION};
 use iced::widget::{button, column as ui_column, container, row, text, text_input, Column, Row};
 use iced::{executor, Application, Command, Element, Length, Settings, Theme};
 use machine::Machine;
 use number_input::number_input;
 use rfd::{FileDialog, MessageButtons, MessageDialog, MessageLevel};
+use std::fs::File;
+use std::io::{self, Write};
 use table::create_tasks_table::create_tasks_table;
 use table::Table;
 use tape::create_tape_preview::create_tape_preview;
@@ -38,7 +40,9 @@ enum Message {
     TableStatesNumberChanged(usize),
     TableTaskChanged(Task, usize, usize),
     FileLoaded(Option<Table>),
+    FileSaved(()),
     OpenFileClicked,
+    SaveFileAsClicked,
     MachineStarted,
     MachineStopped,
     MachineNextStep,
@@ -74,6 +78,10 @@ impl Application for App {
             TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
             TableCharactersChanged(new_characters) => self.table.set_characters(&new_characters),
             OpenFileClicked => return Command::perform(open_file(), FileLoaded),
+            SaveFileAsClicked => {
+                let buffer = self.table.save_to_buffer();
+                return Command::perform(save_file_as(buffer), FileSaved);
+            }
             MachineNextStep => self.machine.next_step(&self.table),
             MachineStopped => self.is_machine_running = false,
             MachineStarted => {
@@ -91,6 +99,7 @@ impl Application for App {
                     self.table = table;
                 }
             }
+            FileSaved(()) => {}
         };
 
         return Command::none();
@@ -195,6 +204,11 @@ impl App {
                 .width(Length::Fill)
                 .on_press(Message::OpenFileClicked);
 
+            let save_file_as_button = button("Save file as")
+                .padding(10)
+                .width(Length::Fill)
+                .on_press(Message::SaveFileAsClicked);
+
             ui_column![
                 "Tape text",
                 initial_tape_input,
@@ -205,7 +219,8 @@ impl App {
                 "Table characters",
                 table_characters_input,
                 start_button,
-                open_file_button
+                open_file_button,
+                save_file_as_button
             ]
             .width(Length::Units(200))
             .spacing(10)
@@ -227,7 +242,7 @@ impl App {
 
 async fn open_file() -> Option<Table> {
     let path = FileDialog::new()
-        .add_filter("Turing Machine file", &["txt", "mt"])
+        .add_filter("Turing Machine file", &[FILE_EXTENSION])
         .pick_file();
 
     if let Some(path) = path {
@@ -236,11 +251,48 @@ async fn open_file() -> Option<Table> {
         }
         MessageDialog::new()
             .set_level(MessageLevel::Warning)
-            .set_title("Wrong file format")
+            .set_title("Error")
             .set_description("Wrong file format")
             .set_buttons(MessageButtons::Ok)
             .show();
     }
 
     return None;
+}
+
+async fn save_file_as(buffer: Result<Vec<u8>, io::Error>) {
+    let res = || -> Option<()> {
+        let buffer = buffer.ok()?;
+        let path = FileDialog::new()
+            .add_filter("Turing Machine file", &[FILE_EXTENSION])
+            .set_file_name("new.mt")
+            .save_file();
+
+        if let None = path {
+            return Some(());
+        }
+
+        let mut path = path.unwrap();
+
+        match path.extension() {
+            Some(ext) if ext == FILE_EXTENSION => {}
+            _ => {
+                let new_filename = format!("{}.{}", path.file_name()?.to_str()?, FILE_EXTENSION);
+                path.set_file_name(new_filename)
+            }
+        }
+
+        let mut file = File::create(path).ok()?;
+        file.write_all(&buffer).ok()?;
+        Some(())
+    };
+
+    if let None = res() {
+        MessageDialog::new()
+            .set_level(MessageLevel::Warning)
+            .set_title("Error")
+            .set_description("Failed to save the file")
+            .set_buttons(MessageButtons::Ok)
+            .show();
+    }
 }

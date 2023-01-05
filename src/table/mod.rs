@@ -90,6 +90,32 @@ impl Table {
         Ok(table)
     }
 
+    pub fn save_to_buffer(&self) -> Result<Vec<u8>, Error> {
+        let mut buffer = vec![];
+
+        let mut line = self
+            .characters
+            .chars()
+            .fold(String::new(), |acc, c| acc + &format!("      {c}   "));
+
+        writeln!(&mut buffer, "{}", &line[4..])?;
+
+        for row in &self.tasks {
+            line.clear();
+
+            for task in row {
+                line += &format!(
+                    "    {:0>2} {} {}",
+                    task.state, task.character, task.direction
+                );
+            }
+
+            writeln!(&mut buffer, "{}", &line[4..])?;
+        }
+
+        Ok(buffer)
+    }
+
     pub fn get_task(&self, state: usize, character: char) -> Option<&Task> {
         let char_index = self
             .sorted_characters
