@@ -10,6 +10,7 @@ use iced::{
 use crate::{
     constants::{DEFAULT_STATE, EMPTY_CHAR},
     task::{Direction, Task},
+    Message,
 };
 
 use super::Table;
@@ -17,9 +18,8 @@ use super::Table;
 const CELL_HEIGHT: u16 = 50;
 const CELL_WIDTH: u16 = 125;
 
-pub fn create_tasks_table<'a, Message: 'a + Clone>(
+pub fn create_tasks_table<'a>(
     table: &Table,
-    on_task_change: &'a impl Fn(Task, usize, usize) -> Message,
     is_mutable: bool,
     selected_column: char,
     selected_row: usize,
@@ -61,9 +61,12 @@ pub fn create_tasks_table<'a, Message: 'a + Clone>(
             let is_selected = selected_column == *char && selected_row == row_index;
 
             let cell = if is_mutable {
-                mutable_cell(task, row_index, column_index, is_selected, on_task_change)
+                let on_task_change = move |task: Task| -> Message {
+                    Message::TableTaskChanged(task, row_index, column_index)
+                };
+                mutable_cell(task, is_selected, on_task_change)
             } else {
-                unmutable_cell(task, is_selected)
+                immutable_cell(task, is_selected)
             };
 
             col = col.push(cell).push(horizontal_rule(0));
@@ -75,7 +78,7 @@ pub fn create_tasks_table<'a, Message: 'a + Clone>(
     tasks_table
 }
 
-fn unmutable_cell<'a, Message: 'a + Clone>(
+fn immutable_cell<'a>(
     Task {
         state,
         character,
@@ -93,17 +96,16 @@ fn unmutable_cell<'a, Message: 'a + Clone>(
     )
 }
 
-fn mutable_cell<'a, Message: 'a + Clone>(
+fn mutable_cell<'a, F: 'a + Clone + Fn(Task) -> Message>(
     Task {
         state,
         character,
         direction,
     }: Task,
-    row_index: usize,
-    column_index: usize,
     is_selected: bool,
-    on_task_change: &'a impl Fn(Task, usize, usize) -> Message,
+    on_task_change: F,
 ) -> Container<'a, Message> {
+    let c = on_task_change.clone();
     let update_state = move |state_str: String| {
         let state: usize = if state_str.len() == 0 {
             DEFAULT_STATE
@@ -117,9 +119,10 @@ fn mutable_cell<'a, Message: 'a + Clone>(
             direction,
             state,
         };
-        on_task_change(task, row_index, column_index)
+        c(task)
     };
 
+    let c = on_task_change.clone();
     let update_char = move |char_str: String| {
         let character = if char_str.len() == 0 {
             EMPTY_CHAR
@@ -131,7 +134,7 @@ fn mutable_cell<'a, Message: 'a + Clone>(
             direction,
             state,
         };
-        on_task_change(task, row_index, column_index)
+        c(task)
     };
 
     let update_direction = move |direction_str: String| {
@@ -150,7 +153,7 @@ fn mutable_cell<'a, Message: 'a + Clone>(
             direction,
             state,
         };
-        on_task_change(task, row_index, column_index)
+        on_task_change(task)
     };
 
     table_cell(
@@ -169,7 +172,7 @@ fn mutable_cell<'a, Message: 'a + Clone>(
     )
 }
 
-fn table_cell<'a, Message: 'a + Clone>(
+fn table_cell<'a>(
     children: Vec<Element<'a, Message>>,
     is_selected: bool,
 ) -> Container<'a, Message> {
