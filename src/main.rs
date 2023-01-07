@@ -2,7 +2,7 @@
 
 mod constants;
 mod machine;
-mod number_input;
+mod numeric_input;
 mod scene;
 mod table;
 mod tape;

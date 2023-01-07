@@ -1,5 +1,5 @@
 use crate::{
-    constants::DEFAULT_STATE, number_input::number_input,
+    constants::DEFAULT_STATE, numeric_input::numeric_input,
     table::create_tasks_table::create_tasks_table, tape::create_tape_preview::create_tape_preview,
     App, Message,
 };
@@ -30,10 +30,10 @@ fn left_column<'a>(app: &App) -> Element<'a, Message> {
     .padding(10)
     .size(20);
 
-    let initial_cursor_position_input = number_input(
+    let initial_cursor_position_input = numeric_input(
         "Set initial cursor position...",
         app.tape.get_cursor_position(),
-        &Message::TapeInputCursorPositionChanged,
+        Message::TapeInputCursorPositionChanged,
     );
 
     let table_characters_input = text_input(
@@ -44,11 +44,12 @@ fn left_column<'a>(app: &App) -> Element<'a, Message> {
     .padding(10)
     .size(20);
 
-    let table_states_number_input = number_input(
+    let table_states_number_input = numeric_input(
         "Set table states number...",
         app.table.get_states_number(),
-        &Message::TableStatesNumberChanged,
-    );
+        Message::TableStatesNumberChanged,
+    )
+    .can_be_negative(false);
 
     let start_button = button("Start")
         .padding(10)
