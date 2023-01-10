@@ -1,11 +1,14 @@
 pub mod create_tape_preview;
 
-use crate::constants::{EMPTY_CHAR, TAPE_CHARS_NUMBER};
+use crate::constants::{DEFAULT_TAPE_CHARS_NUMBER, EMPTY_CHAR, MAX_TAPE_LENGTH, MIN_TAPE_LENGTH};
 use std::iter::repeat;
 
 #[derive(Clone)]
 pub struct Tape {
-    /// String with len == TAPE_CHARS_NUMBER, with characters in the middle
+    // Legnth of the tape
+    length: usize,
+
+    /// String with len() == self.legnth, with characters in the middle
     /// set using `set_chars` and filled with EMPTY_CHARs on left and right end
     chars: String,
 
@@ -21,10 +24,12 @@ pub struct Tape {
 
 impl Tape {
     pub fn new() -> Self {
-        let position_zero = TAPE_CHARS_NUMBER as isize / 2;
+        let length = DEFAULT_TAPE_CHARS_NUMBER;
+        let position_zero = length as isize / 2;
 
         Self {
-            chars: repeat(EMPTY_CHAR).take(TAPE_CHARS_NUMBER).collect(),
+            length,
+            chars: repeat(EMPTY_CHAR).take(length).collect(),
             cursor_position: 0,
             first_char_position: position_zero,
             last_char_position: position_zero - 1,
@@ -41,15 +46,15 @@ impl Tape {
     }
 
     pub fn set_chars(&mut self, mut new_chars: String) {
-        if new_chars.len() > TAPE_CHARS_NUMBER {
-            new_chars.drain(TAPE_CHARS_NUMBER..);
+        if new_chars.len() > self.length {
+            new_chars.drain(self.length..);
         }
 
-        let first_char_position = (TAPE_CHARS_NUMBER - new_chars.len()) / 2;
+        let first_char_position = (self.length - new_chars.len()) / 2;
         let last_char_position = first_char_position + new_chars.len() - 1;
         let replace_range = first_char_position..=last_char_position;
 
-        self.chars = repeat(EMPTY_CHAR).take(TAPE_CHARS_NUMBER).collect();
+        self.chars = repeat(EMPTY_CHAR).take(self.length).collect();
         self.chars.replace_range(replace_range, &new_chars);
 
         self.first_char_position = first_char_position as isize;
@@ -63,7 +68,7 @@ impl Tape {
 
     pub fn set_cursor_position(&mut self, new_cursor_position: isize) {
         let min_position = -self.first_char_position;
-        let max_position = min_position + TAPE_CHARS_NUMBER as isize - 1;
+        let max_position = min_position + self.length as isize - 1;
 
         self.cursor_position = if new_cursor_position <= min_position {
             min_position
@@ -72,6 +77,22 @@ impl Tape {
         } else {
             new_cursor_position
         };
+    }
+
+    pub fn get_length(&self) -> usize {
+        self.length
+    }
+
+    pub fn set_length(&mut self, new_length: usize) {
+        self.length = if new_length <= MIN_TAPE_LENGTH {
+            MIN_TAPE_LENGTH
+        } else if new_length >= MAX_TAPE_LENGTH {
+            MAX_TAPE_LENGTH
+        } else {
+            new_length
+        };
+
+        self.set_chars(self.get_chars_without_margin().to_string());
     }
 
     pub fn get_first_char_position(&self) -> isize {
@@ -101,7 +122,7 @@ impl Tape {
     }
 
     pub fn move_cursor_right(&mut self) -> Result<(), ()> {
-        if self.first_char_position + self.cursor_position + 1 < TAPE_CHARS_NUMBER as isize {
+        if self.first_char_position + self.cursor_position + 1 < self.length as isize {
             self.cursor_position += 1;
             Ok(())
         } else {

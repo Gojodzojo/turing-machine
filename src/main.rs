@@ -1,4 +1,5 @@
 #![feature(iter_array_chunks)]
+#![feature(iter_collect_into)]
 
 mod constants;
 mod machine;
@@ -37,6 +38,7 @@ pub struct App {
 pub enum Message {
     TapeInputCharsChanged(String),
     TapeInputCursorPositionChanged(isize),
+    TapeLengthChanged(usize),
     TableCharactersChanged(String),
     TableStatesNumberChanged(usize),
     TableTaskChanged(Task, usize, usize),
@@ -94,6 +96,7 @@ impl Application for App {
             FileToSavePicked(Some(path)) => return self.save_file(path),
             TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
             TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
+            TapeLengthChanged(new_length) => self.tape.set_length(new_length),
             MachineNextStep => self.machine.next_step(&self.table),
             MachineStopped => self.scene = Scene::Editor,
             NewFileClicked => self.new_file(),

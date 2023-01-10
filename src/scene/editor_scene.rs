@@ -36,6 +36,13 @@ fn left_column<'a>(app: &App) -> Element<'a, Message> {
         Message::TapeInputCursorPositionChanged,
     );
 
+    let tape_length_input = numeric_input(
+        "Set tape length...",
+        app.tape.get_length(),
+        Message::TapeLengthChanged,
+    )
+    .can_be_negative(false);
+
     let table_characters_input = text_input(
         "Set table characters...",
         &app.table.get_characters(),
@@ -81,6 +88,8 @@ fn left_column<'a>(app: &App) -> Element<'a, Message> {
         initial_tape_input,
         "Cursor position",
         initial_cursor_position_input,
+        "Tape length",
+        tape_length_input,
         "Table states number",
         table_states_number_input,
         "Table characters",

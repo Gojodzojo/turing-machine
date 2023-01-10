@@ -233,12 +233,11 @@ trait FilterCharacters {
 
 impl FilterCharacters for str {
     fn filter_characters(&self) -> String {
-        self.chars().fold("".to_string(), |acc, c| {
+        self.chars().fold("".to_string(), |mut acc, c| {
             if !acc.contains(c) && !c.is_whitespace() {
-                acc + &c.to_string()
-            } else {
-                acc
+                acc.push(c);
             }
+            acc
         })
     }
 }
