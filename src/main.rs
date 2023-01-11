@@ -10,7 +10,7 @@ mod tape;
 mod task;
 
 use constants::{DEFAULT_FILENAME, FILE_EXTENSION};
-use iced::{executor, Application, Command, Element, Settings, Theme};
+use iced::{executor, window, Application, Command, Element, Settings, Subscription, Theme};
 use machine::Machine;
 use rfd::{FileDialog, MessageButtons, MessageDialog, MessageLevel};
 use scene::Scene;
@@ -22,7 +22,10 @@ use tape::Tape;
 use task::Task;
 
 pub fn main() -> iced::Result {
-    App::run(Settings::default())
+    App::run(Settings {
+        exit_on_close_request: false,
+        ..Settings::default()
+    })
 }
 
 pub struct App {
@@ -32,6 +35,7 @@ pub struct App {
     file_path: Option<PathBuf>,
     was_modified: bool,
     scene: Scene,
+    should_exit: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -51,7 +55,11 @@ pub enum Message {
     MachineStarted,
     MachineStopped,
     MachineNextStep,
+    CloseButtonClicked,
     ErrorDialogClosed(()),
+    EventOccurred(iced_native::Event),
+    WithUnsavedFileDialog(Box<Message>),
+    UnsavedFileDialogAnsweared((bool, Box<Message>)),
 }
 
 impl Application for App {
@@ -67,8 +75,9 @@ impl Application for App {
                 machine: Machine::new(),
                 tape: Tape::new(),
                 file_path: None,
-                was_modified: true,
+                was_modified: false,
                 scene: Scene::Editor,
+                should_exit: false,
             },
             Command::none(),
         )
@@ -92,23 +101,43 @@ impl Application for App {
         use Message::*;
 
         match message {
-            FileToOpenPicked(Some(path)) => return self.open_file(path),
-            FileToSavePicked(Some(path)) => return self.save_file(path),
-            TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
-            TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
-            TapeLengthChanged(new_length) => self.tape.set_length(new_length),
+            CloseButtonClicked => self.should_exit = true,
             MachineNextStep => self.machine.next_step(&self.table),
             MachineStopped => self.scene = Scene::Editor,
             NewFileClicked => self.new_file(),
-            OpenFileClicked => return Command::perform(pick_file_to_open(), FileToOpenPicked),
+            TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
+            TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
+            TapeLengthChanged(new_length) => self.tape.set_length(new_length),
+            FileToOpenPicked(Some(path)) => return self.open_file(path),
+            FileToSavePicked(Some(path)) => return self.save_file(path),
+            OpenFileClicked => return pick_file_to_open(),
+            SaveFileAsClicked => return pick_file_to_save(),
             SaveFileClicked => {
                 return match &self.file_path {
                     Some(path) => self.save_file(path.clone()),
-                    None => Command::perform(pick_file_to_save(DEFAULT_FILENAME), FileToSavePicked),
+                    None => pick_file_to_save(),
                 }
             }
-            SaveFileAsClicked => {
-                return Command::perform(pick_file_to_save(DEFAULT_FILENAME), FileToSavePicked)
+            WithUnsavedFileDialog(callback) => {
+                return match self.was_modified {
+                    true => show_should_save_dialog(callback),
+                    false => redirect(*callback),
+                }
+            }
+            UnsavedFileDialogAnsweared((choice, callback)) => {
+                return match choice {
+                    false => redirect(*callback),
+                    true => {
+                        if let Some(path) = &self.file_path {
+                            Command::batch([self.save_file(path.clone()), redirect(*callback)])
+                        } else {
+                            pick_file_to_save()
+                        }
+                    }
+                }
+            }
+            EventOccurred(iced_native::Event::Window(window::Event::CloseRequested)) => {
+                return redirect(WithUnsavedFileDialog(Box::new(CloseButtonClicked)));
             }
             MachineStarted => {
                 self.machine.reset(self.tape.clone());
@@ -135,12 +164,20 @@ impl Application for App {
     fn view(&self) -> Element<Self::Message> {
         self.scene.view(self)
     }
+
+    fn subscription(&self) -> Subscription<Message> {
+        iced_native::subscription::events().map(Message::EventOccurred)
+    }
+
+    fn should_exit(&self) -> bool {
+        self.should_exit
+    }
 }
 
 impl App {
     fn new_file(&mut self) {
         self.table = Table::new_empty();
-        self.was_modified = true;
+        self.was_modified = false;
         self.file_path = None;
     }
 
@@ -155,10 +192,7 @@ impl App {
         };
 
         if let Err(_) = res() {
-            return Command::perform(
-                show_error("Error", "Wrong file format"),
-                Message::ErrorDialogClosed,
-            );
+            return show_error("Wrong file format");
         }
 
         return Command::none();
@@ -174,48 +208,77 @@ impl App {
         };
 
         if let Err(_) = res() {
-            return Command::perform(
-                show_error("Error", "Failed to save the file"),
-                Message::ErrorDialogClosed,
-            );
+            return show_error("Failed to save the file");
         }
 
         return Command::none();
     }
 }
 
-async fn show_error(title: &str, description: &str) {
-    MessageDialog::new()
-        .set_level(MessageLevel::Error)
-        .set_title(title)
-        .set_description(description)
-        .set_buttons(MessageButtons::Ok)
-        .show();
+fn show_error(description: &'static str) -> Command<Message> {
+    async fn a(description: &str) {
+        MessageDialog::new()
+            .set_level(MessageLevel::Error)
+            .set_title("Error")
+            .set_description(description)
+            .set_buttons(MessageButtons::Ok)
+            .show();
+    }
+    return Command::perform(a(description), Message::ErrorDialogClosed);
 }
 
-async fn pick_file_to_open() -> Option<PathBuf> {
-    FileDialog::new()
-        .add_filter("Turing Machine file", &[FILE_EXTENSION])
-        .pick_file()
-}
+fn show_should_save_dialog(callback: Box<Message>) -> Command<Message> {
+    async fn a(callback: Box<Message>) -> (bool, Box<Message>) {
+        let choice = MessageDialog::new()
+            .set_level(MessageLevel::Info)
+            .set_title("Unsaved changes")
+            .set_description("This file contains unsaved changes. Do you want to save this file?")
+            .set_buttons(rfd::MessageButtons::YesNo)
+            .show();
 
-async fn pick_file_to_save(default_filename: &str) -> Option<PathBuf> {
-    let path = FileDialog::new()
-        .add_filter("Turing Machine file", &[FILE_EXTENSION])
-        .set_file_name(default_filename)
-        .save_file();
-
-    if let Some(mut path) = path {
-        match path.extension() {
-            Some(ext) if ext == FILE_EXTENSION => {}
-            _ => {
-                let new_filename = format!("{}.{}", path.file_name()?.to_str()?, FILE_EXTENSION);
-                path.set_file_name(new_filename);
-            }
-        }
-
-        return Some(path);
+        (choice, callback)
     }
 
-    return None;
+    return Command::perform(a(callback), Message::UnsavedFileDialogAnsweared);
+}
+
+fn pick_file_to_open() -> Command<Message> {
+    async fn a() -> Option<PathBuf> {
+        FileDialog::new()
+            .add_filter("Turing Machine file", &[FILE_EXTENSION])
+            .pick_file()
+    }
+
+    return Command::perform(a(), Message::FileToOpenPicked);
+}
+
+fn pick_file_to_save() -> Command<Message> {
+    async fn a() -> Option<PathBuf> {
+        let path = FileDialog::new()
+            .add_filter("Turing Machine file", &[FILE_EXTENSION])
+            .set_file_name(DEFAULT_FILENAME)
+            .save_file();
+
+        if let Some(mut path) = path {
+            match path.extension() {
+                Some(ext) if ext == FILE_EXTENSION => {}
+                _ => {
+                    let new_filename =
+                        format!("{}.{}", path.file_name()?.to_str()?, FILE_EXTENSION);
+                    path.set_file_name(new_filename);
+                }
+            }
+
+            return Some(path);
+        }
+
+        return None;
+    }
+
+    return Command::perform(a(), Message::FileToSavePicked);
+}
+
+fn redirect(message: Message) -> Command<Message> {
+    async fn noop() {}
+    return Command::perform(noop(), |_| message);
 }

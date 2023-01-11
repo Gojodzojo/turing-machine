@@ -63,15 +63,16 @@ fn left_column<'a>(app: &App) -> Element<'a, Message> {
         .width(Length::Fill)
         .on_press(Message::MachineStarted);
 
-    let new_file_button = button("New file")
-        .padding(10)
-        .width(Length::Fill)
-        .on_press(Message::NewFileClicked);
+    let new_file_button = button("New file").padding(10).width(Length::Fill).on_press(
+        Message::WithUnsavedFileDialog(Box::new(Message::NewFileClicked)),
+    );
 
     let open_file_button = button("Open file")
         .padding(10)
         .width(Length::Fill)
-        .on_press(Message::OpenFileClicked);
+        .on_press(Message::WithUnsavedFileDialog(Box::new(
+            Message::OpenFileClicked,
+        )));
 
     let save_file_button = button("Save file")
         .padding(10)
