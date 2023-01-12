@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{constants::DEFAULT_STATE, table::Table, tape::Tape, task::Direction};
 
 pub struct Machine {
@@ -12,6 +14,8 @@ pub struct Machine {
 
     // True if machine has finished its work
     is_halted: bool,
+
+    self_timer_interval: Option<Duration>,
 }
 
 impl Machine {
@@ -21,6 +25,7 @@ impl Machine {
             tape: Tape::new(),
             step: 0,
             is_halted: false,
+            self_timer_interval: None,
         }
     }
 
@@ -28,7 +33,19 @@ impl Machine {
         self.state = DEFAULT_STATE;
         self.tape = new_tape;
         self.step = 0;
-        self.is_halted = false
+        self.is_halted = false;
+        self.self_timer_interval = None;
+    }
+
+    pub fn set_self_timer_interval(&mut self, new_interval: Option<u32>) {
+        self.self_timer_interval = match new_interval {
+            Some(interval) => Some(Duration::from_millis(interval as u64)),
+            None => None,
+        };
+    }
+
+    pub fn get_self_timer_interval(&self) -> Option<Duration> {
+        self.self_timer_interval
     }
 
     pub fn is_halted(&self) -> bool {
@@ -52,6 +69,8 @@ impl Machine {
             return;
         }
 
+        self.step += 1;
+
         let current_char = self.tape.get_current_char();
         let task = table.get_task(self.state, current_char);
 
@@ -65,13 +84,12 @@ impl Machine {
                 Direction::Stop => Err(()),
             };
 
-            if let Err(_) = move_result {
-                self.is_halted = true;
+            if let Ok(_) = move_result {
+                return;
             }
-        } else {
-            self.is_halted = true;
-        };
+        }
 
-        self.step += 1;
+        self.is_halted = true;
+        self.self_timer_interval = None;
     }
 }

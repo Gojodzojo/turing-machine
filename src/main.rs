@@ -48,6 +48,7 @@ pub enum Message {
     TableTaskChanged(Task, usize, usize),
     FileToOpenPicked(Option<PathBuf>),
     FileToSavePicked(Option<PathBuf>),
+    MachineSelfTimerIntervalChange(Option<u32>),
     NewFileClicked,
     OpenFileClicked,
     SaveFileClicked,
@@ -102,8 +103,6 @@ impl Application for App {
 
         match message {
             CloseButtonClicked => self.should_exit = true,
-            MachineNextStep => self.machine.next_step(&self.table),
-            MachineStopped => self.scene = Scene::Editor,
             NewFileClicked => self.new_file(),
             TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
             TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
@@ -139,9 +138,17 @@ impl Application for App {
             EventOccurred(iced_native::Event::Window(window::Event::CloseRequested)) => {
                 return redirect(WithUnsavedFileDialog(Box::new(CloseButtonClicked)));
             }
+            MachineNextStep => self.machine.next_step(&self.table),
             MachineStarted => {
                 self.machine.reset(self.tape.clone());
                 self.scene = Scene::Machine;
+            }
+            MachineStopped => {
+                self.machine.set_self_timer_interval(None);
+                self.scene = Scene::Editor
+            }
+            MachineSelfTimerIntervalChange(interval) => {
+                self.machine.set_self_timer_interval(interval)
             }
             TableCharactersChanged(new_characters) => {
                 self.table.set_characters(&new_characters);
@@ -166,7 +173,13 @@ impl Application for App {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        iced_native::subscription::events().map(Message::EventOccurred)
+        let mut subscriptions = Vec::with_capacity(2);
+        subscriptions.push(iced::subscription::events().map(Message::EventOccurred));
+        if let Some(interval) = self.machine.get_self_timer_interval() {
+            subscriptions.push(iced::time::every(interval).map(|_| Message::MachineNextStep))
+        }
+
+        Subscription::batch(subscriptions)
     }
 
     fn should_exit(&self) -> bool {

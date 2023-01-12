@@ -1,9 +1,14 @@
 use crate::{
-    table::create_tasks_table::create_tasks_table, tape::create_tape_preview::create_tape_preview,
+    constants::{
+        MACHINE_SELF_TIMER_INTERVAL_STEP, MIN_MACHINE_SELF_TIMER_INTERVAL,
+        STOP_MACHINE_SELF_TIMER_VALUE,
+    },
+    table::create_tasks_table::create_tasks_table,
+    tape::create_tape_preview::create_tape_preview,
     App, Message,
 };
 use iced::{
-    widget::{button, column as ui_column, text},
+    widget::{button, column as ui_column, slider, text},
     Element, Length,
 };
 
@@ -36,11 +41,39 @@ fn left_column<'a>(app: &App) -> Element<'a, Message> {
     let next_step_button: Element<_> = if app.machine.is_halted() {
         text("Machine halted").into()
     } else {
-        button("Next step")
-            .padding(10)
-            .width(Length::Fill)
-            .on_press(Message::MachineNextStep)
-            .into()
+        let slider_val = if let Some(interval) = app.machine.get_self_timer_interval() {
+            interval.as_millis() as u32
+        } else {
+            STOP_MACHINE_SELF_TIMER_VALUE
+        };
+
+        let on_slider_change = |v: u32| {
+            let c = match v {
+                STOP_MACHINE_SELF_TIMER_VALUE => None,
+                v => Some(v),
+            };
+            Message::MachineSelfTimerIntervalChange(c)
+        };
+
+        let slider_label_text = match slider_val {
+            STOP_MACHINE_SELF_TIMER_VALUE => "Self-timer interval: None".to_string(),
+            v => format!("Self-timer interval: {}ms", v),
+        };
+
+        ui_column![
+            text(slider_label_text),
+            slider(
+                MIN_MACHINE_SELF_TIMER_INTERVAL..=STOP_MACHINE_SELF_TIMER_VALUE,
+                slider_val,
+                on_slider_change
+            )
+            .step(MACHINE_SELF_TIMER_INTERVAL_STEP),
+            button("Next step")
+                .padding(10)
+                .width(Length::Fill)
+                .on_press(Message::MachineNextStep),
+        ]
+        .into()
     };
 
     ui_column![step, state, next_step_button, stop_button]
