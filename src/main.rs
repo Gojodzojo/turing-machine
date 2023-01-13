@@ -1,5 +1,5 @@
+#![windows_subsystem = "windows"]
 #![feature(iter_array_chunks)]
-#![feature(iter_collect_into)]
 
 mod constants;
 mod machine;
@@ -9,7 +9,8 @@ mod table;
 mod tape;
 mod task;
 
-use constants::{DEFAULT_FILENAME, FILE_EXTENSION};
+use constants::{DEFAULT_FILENAME, FILE_EXTENSION, ICON_BYTES, ICON_FORMAT};
+use iced::window::Icon;
 use iced::{executor, window, Application, Command, Element, Settings, Subscription, Theme};
 use machine::Machine;
 use rfd::{FileDialog, MessageButtons, MessageDialog, MessageLevel};
@@ -24,6 +25,10 @@ use task::Task;
 pub fn main() -> iced::Result {
     App::run(Settings {
         exit_on_close_request: false,
+        window: window::Settings {
+            icon: Icon::from_file_data(ICON_BYTES, Some(ICON_FORMAT)).ok(),
+            ..window::Settings::default()
+        },
         ..Settings::default()
     })
 }

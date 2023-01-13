@@ -6,9 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-iced = { version = "0.6.0", features = ["debug", "tokio"] }
+iced = { version = "0.6.0", features = ["debug", "tokio", "image_rs"] }
 iced_lazy = "0.3.0"
 iced_native = "0.7.0"
 num-traits = "0.2"
 const-str = "0.5.3"
 rfd = "0.10.0"
+image = "0.24"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1.12"

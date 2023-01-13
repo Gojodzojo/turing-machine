@@ -1,5 +1,6 @@
 use crate::task::Direction;
 use iced::Font;
+use image::ImageFormat;
 
 pub const FILE_EXTENSION: &str = "mt";
 pub const DEFAULT_FILENAME: &str = const_str::concat!("new.", FILE_EXTENSION);
@@ -24,3 +25,5 @@ pub const TAPE_FONT: Font = Font::External {
     name: "Roboto Mono",
     bytes: include_bytes!("../RobotoMono/fonts/ttf/RobotoMono-Medium.ttf"),
 };
+pub const ICON_BYTES: &[u8] = include_bytes!("../icon.ico");
+pub const ICON_FORMAT: ImageFormat = ImageFormat::Ico;
