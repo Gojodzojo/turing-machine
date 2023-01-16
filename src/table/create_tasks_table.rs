@@ -1,11 +1,12 @@
 use iced::{
     alignment, theme,
     widget::{
-        self, column as ui_column, container, horizontal_rule, row, text, text_input as txt_input,
+        self, column as ui_column, container, horizontal_rule, row, text,
         vertical_rule, Container, Row,
     },
     Alignment, Background, Color, Element, Length, Theme,
 };
+use iced_native::widget::Id;
 
 use crate::{
     constants::{DEFAULT_STATE, EMPTY_CHAR},
@@ -13,7 +14,7 @@ use crate::{
     Message,
 };
 
-use super::Table;
+use super::{Table, blankable_input::blankable_input};
 
 const CELL_HEIGHT: u16 = 50;
 const CELL_WIDTH: u16 = 125;
@@ -23,6 +24,7 @@ pub fn create_tasks_table<'a>(
     is_mutable: bool,
     selected_column: char,
     selected_row: usize,
+    focused_widget: &'a Option<Id>,
 ) -> Row<'a, Message> {
     let mut tasks_table: Row<Message> =
         row![vertical_rule(0)]
@@ -64,7 +66,7 @@ pub fn create_tasks_table<'a>(
                 let on_task_change = move |task: Task| -> Message {
                     Message::TableTaskChanged(task, row_index, column_index)
                 };
-                mutable_cell(task, is_selected, on_task_change)
+                mutable_cell(task, is_selected, focused_widget, on_task_change)
             } else {
                 immutable_cell(task, is_selected)
             };
@@ -103,6 +105,7 @@ fn mutable_cell<'a, F: 'a + Clone + Fn(Task) -> Message>(
         direction,
     }: Task,
     is_selected: bool,
+    focused_widget: &'a Option<Id>,
     on_task_change: F,
 ) -> Container<'a, Message> {
     let c = on_task_change.clone();
@@ -155,17 +158,15 @@ fn mutable_cell<'a, F: 'a + Clone + Fn(Task) -> Message>(
         };
         on_task_change(task)
     };
+    
 
     table_cell(
         vec![
-            txt_input("state", &format!("{}", state), update_state)
-                .width(Length::Units(20))
+            blankable_input("state", format!("{}", state), focused_widget, Length::Units(20), update_state)
                 .into(),
-            txt_input("char", &format!("{}", character), update_char)
-                .width(Length::Units(10))
+            blankable_input("char", format!("{}", character), focused_widget, Length::Units(15), update_char)
                 .into(),
-            txt_input("direction", &format!("{}", direction), update_direction)
-                .width(Length::Units(10))
+            blankable_input("direction", format!("{}", direction), focused_widget, Length::Units(15), update_direction)
                 .into(),
         ],
         is_selected,
@@ -193,3 +194,4 @@ fn table_cell<'a>(
         .width(Length::Fill)
         .style(theme)
 }
+

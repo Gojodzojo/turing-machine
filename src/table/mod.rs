@@ -1,4 +1,5 @@
 pub mod create_tasks_table;
+mod blankable_input;
 
 use crate::{
     constants::{DEFAULT_TABLE_CHARS, MAX_STATES_NUMBER, MIN_STATES_NUMBER},

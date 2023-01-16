@@ -14,7 +14,7 @@ use iced::{
 
 use super::scene_frame;
 
-pub fn machine_scene<'a>(app: &App) -> Element<'a, Message> {
+pub fn machine_scene<'a>(app: &'a App) -> Element<'a, Message> {
     let left_column = left_column(app);
 
     let tasks_table = create_tasks_table(
@@ -22,6 +22,7 @@ pub fn machine_scene<'a>(app: &App) -> Element<'a, Message> {
         false,
         app.machine.get_tape().get_current_char(),
         app.machine.get_state(),
+        &app.focused_widget
     );
 
     let tape_preview = create_tape_preview(app.machine.get_tape());

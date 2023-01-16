@@ -1,15 +1,17 @@
 use std::{fmt::Display, str::FromStr};
 
 use iced::{
-    widget::{self, button, row, text_input},
+    widget::{self, button, row, text_input, text_input::{Id as TxtId}},
     Element,
 };
 use iced_lazy::Component;
+use iced_native::widget::Id;
 use num_traits::Num;
 
 pub struct NumericInput<'a, Message, N, F: Fn(N) -> Message> {
     placeholder: &'a str,
     value: N,
+    focused_widget: &'a Option<Id>,
     on_number_change: F,
     can_be_negative: bool,
 }
@@ -17,12 +19,14 @@ pub struct NumericInput<'a, Message, N, F: Fn(N) -> Message> {
 pub fn numeric_input<'a, Message, N, F: Fn(N) -> Message>(
     placeholder: &'a str,
     value: N,
+    focused_widget: &'a Option<Id>,
     on_number_change: F,
 ) -> NumericInput<'a, Message, N, F> {
     NumericInput {
         placeholder,
         value,
         on_number_change,
+        focused_widget,
         can_be_negative: true,
     }
 }
@@ -49,12 +53,14 @@ pub enum DisplayedValue {
 
 pub struct State {
     displayed_value: DisplayedValue,
+    input_id: TxtId,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
             displayed_value: DisplayedValue::ActualValue,
+            input_id: TxtId::unique(),
         }
     }
 }
@@ -91,15 +97,21 @@ where
     }
 
     fn view(&self, state: &Self::State) -> Element<Event, Renderer> {
-        let input_value = match state.displayed_value {
-            DisplayedValue::Blank => "".to_string(),
-            DisplayedValue::Minus => "-".to_string(),
-            DisplayedValue::ActualValue => self.value.to_string(),
-        };
+        let input_value = match &self.focused_widget {
+            Some(focused_widget) if *focused_widget == Id::from(state.input_id.clone()) => match state.displayed_value {
+                DisplayedValue::Blank => "".to_string(),
+                DisplayedValue::Minus => "-".to_string(),
+                DisplayedValue::ActualValue => self.value.to_string(),
+            },
+            _ => {
+                self.value.to_string()
+            }
+        } ;
 
         let input = text_input(self.placeholder, &input_value, Event::InputChanged)
             .padding(10)
-            .size(20);
+            .size(20)
+            .id(state.input_id.clone());
 
         let increment_button = button("+").padding(10).on_press(Event::IncrementPressed);
         let decrement_button = button("-").padding(10).on_press(Event::DecrementPressed);

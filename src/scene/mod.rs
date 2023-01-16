@@ -15,7 +15,7 @@ pub enum Scene {
 }
 
 impl Scene {
-    pub fn view<'a>(&self, app: &App) -> Element<'a, Message> {
+    pub fn view<'a>(&self, app: &'a App) -> Element<'a, Message> {
         match self {
             Self::Editor => editor_scene(app),
             Self::Machine => machine_scene(app),

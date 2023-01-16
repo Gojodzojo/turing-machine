@@ -10,18 +10,18 @@ use iced::{
 
 use super::scene_frame;
 
-pub fn editor_scene<'a>(app: &App) -> Element<'a, Message> {
+pub fn editor_scene<'a>(app: &'a App) -> Element<'a, Message> {
     let left_column = left_column(app);
 
     let tasks_table =
-        create_tasks_table(&app.table, true, app.tape.get_current_char(), DEFAULT_STATE);
+        create_tasks_table(&app.table, true, app.tape.get_current_char(), DEFAULT_STATE, &app.focused_widget);
 
     let tape_preview = create_tape_preview(&app.tape);
 
     scene_frame(tape_preview.into(), left_column.into(), tasks_table.into())
 }
 
-fn left_column<'a>(app: &App) -> Element<'a, Message> {
+fn left_column<'a>(app: &'a App) -> Element<'a, Message> {
     let initial_tape_input = text_input(
         "Set initial tape...",
         app.tape.get_chars_without_margin(),
@@ -33,12 +33,14 @@ fn left_column<'a>(app: &App) -> Element<'a, Message> {
     let initial_cursor_position_input = numeric_input(
         "Set initial cursor position...",
         app.tape.get_cursor_position(),
+        &app.focused_widget,
         Message::TapeInputCursorPositionChanged,
     );
 
     let tape_length_input = numeric_input(
         "Set tape length...",
         app.tape.get_length(),
+        &app.focused_widget,
         Message::TapeLengthChanged,
     )
     .can_be_negative(false);
@@ -54,6 +56,7 @@ fn left_column<'a>(app: &App) -> Element<'a, Message> {
     let table_states_number_input = numeric_input(
         "Set table states number...",
         app.table.get_states_number(),
+        &app.focused_widget,
         Message::TableStatesNumberChanged,
     )
     .can_be_negative(false);

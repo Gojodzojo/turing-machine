@@ -19,7 +19,7 @@ pub struct Tape {
     first_char_position: isize,
 
     /// Index of the last of characters in `chars` set using `set_chars`
-    last_char_position: isize,
+    post_last_char_position: isize,
 }
 
 impl Tape {
@@ -32,7 +32,7 @@ impl Tape {
             chars: repeat(EMPTY_CHAR).take(length).collect(),
             cursor_position: 0,
             first_char_position: position_zero,
-            last_char_position: position_zero - 1,
+            post_last_char_position: position_zero,
         }
     }
 
@@ -41,7 +41,7 @@ impl Tape {
     }
 
     pub fn get_chars_without_margin(&self) -> &str {
-        let range = self.first_char_position as usize..=self.last_char_position as usize;
+        let range = self.first_char_position as usize..self.post_last_char_position as usize;
         &self.chars[range]
     }
 
@@ -51,14 +51,14 @@ impl Tape {
         }
 
         let first_char_position = (self.length - new_chars.len()) / 2;
-        let last_char_position = first_char_position + new_chars.len() - 1;
-        let replace_range = first_char_position..=last_char_position;
+        let post_last_char_position = first_char_position + new_chars.len();
+        let replace_range = first_char_position..post_last_char_position;
 
         self.chars = repeat(EMPTY_CHAR).take(self.length).collect();
         self.chars.replace_range(replace_range, &new_chars);
 
         self.first_char_position = first_char_position as isize;
-        self.last_char_position = last_char_position as isize;
+        self.post_last_char_position = post_last_char_position as isize;
         self.set_cursor_position(self.cursor_position);
     }
 

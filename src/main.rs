@@ -8,10 +8,14 @@ mod scene;
 mod table;
 mod tape;
 mod task;
+mod find_focused;
 
 use constants::{DEFAULT_FILENAME, FILE_EXTENSION, ICON_BYTES, ICON_FORMAT};
+use find_focused::find_focused;
 use iced::window::Icon;
-use iced::{executor, window, Application, Command, Element, Settings, Subscription, Theme};
+use iced::{executor, window, Application, Command, Element, Settings, Subscription, Theme, mouse};
+use iced_native::command;
+use iced_native::widget::Id;
 use machine::Machine;
 use rfd::{FileDialog, MessageButtons, MessageDialog, MessageLevel};
 use scene::Scene;
@@ -41,6 +45,7 @@ pub struct App {
     was_modified: bool,
     scene: Scene,
     should_exit: bool,
+    focused_widget: Option<Id>
 }
 
 #[derive(Debug, Clone)]
@@ -62,6 +67,7 @@ pub enum Message {
     MachineStopped,
     MachineNextStep,
     CloseButtonClicked,
+    FocusedWidget(Option<Id>),
     ErrorDialogClosed(()),
     EventOccurred(iced_native::Event),
     WithUnsavedFileDialog(Box<Message>),
@@ -84,6 +90,7 @@ impl Application for App {
                 was_modified: false,
                 scene: Scene::Editor,
                 should_exit: false,
+                focused_widget: None,
             },
             Command::none(),
         )
@@ -107,6 +114,7 @@ impl Application for App {
         use Message::*;
 
         match message {
+            FocusedWidget(id) => self.focused_widget = id,
             CloseButtonClicked => self.should_exit = true,
             NewFileClicked => self.new_file(),
             TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
@@ -140,8 +148,14 @@ impl Application for App {
                     }
                 }
             }
-            EventOccurred(iced_native::Event::Window(window::Event::CloseRequested)) => {
-                return redirect(WithUnsavedFileDialog(Box::new(CloseButtonClicked)));
+            EventOccurred(e) => {
+                use iced_native::Event::*;
+                match e {
+                    Window(window::Event::CloseRequested) => return redirect(WithUnsavedFileDialog(Box::new(CloseButtonClicked))),
+                    Mouse(mouse::Event::ButtonReleased(_)) | Touch(iced::touch::Event::FingerLifted { id: _, position: _ }) => return get_focused_element_id(),
+                    _ => {}
+                }
+                
             }
             MachineNextStep => self.machine.next_step(&self.table),
             MachineStarted => {
@@ -299,4 +313,8 @@ fn pick_file_to_save() -> Command<Message> {
 fn redirect(message: Message) -> Command<Message> {
     async fn noop() {}
     return Command::perform(noop(), |_| message);
+}
+
+fn get_focused_element_id() -> Command<Message> {
+    return Command::single(command::Action::Widget(iced_native::widget::Action::new(find_focused()).map(Message::FocusedWidget)));
 }
