@@ -13,8 +13,12 @@ mod task;
 
 use constants::{FILE_EXTENSION, ICON_BYTES, ICON_FORMAT};
 use find_focused::find_focused;
+use iced::keyboard::KeyCode;
 use iced::window::Icon;
-use iced::{executor, mouse, window, Application, Command, Element, Settings, Subscription, Theme};
+use iced::{
+    executor, keyboard, mouse, window, Application, Command, Element, Event, Settings,
+    Subscription, Theme,
+};
 use iced_native::command;
 use iced_native::widget::Id;
 use language::polish::POLISH_LANGUAGE;
@@ -28,6 +32,8 @@ use std::path::PathBuf;
 use table::Table;
 use tape::Tape;
 use task::Task;
+
+use crate::constants::SCALE_FACTOR_STEP;
 
 pub fn main() -> iced::Result {
     App::run(Settings {
@@ -50,6 +56,7 @@ pub struct App {
     should_exit: bool,
     focused_widget: Option<Id>,
     language: &'static Language,
+    scale_factor: f64,
 }
 
 #[derive(Debug, Clone)]
@@ -97,6 +104,7 @@ impl Application for App {
                 should_exit: false,
                 focused_widget: None,
                 language: POLISH_LANGUAGE,
+                scale_factor: 1.0,
             },
             Command::none(),
         )
@@ -123,6 +131,7 @@ impl Application for App {
         use Message::*;
 
         match message {
+            EventOccurred(e) => return self.handle_events(e),
             FocusedWidget(id) => self.focused_widget = id,
             CloseButtonClicked => self.should_exit = true,
             NewFileClicked => self.new_file(),
@@ -156,19 +165,6 @@ impl Application for App {
                             pick_file_to_save_dialog(self.language)
                         }
                     }
-                }
-            }
-            EventOccurred(e) => {
-                use iced_native::Event::*;
-                match e {
-                    Window(window::Event::CloseRequested) => {
-                        return redirect(WithUnsavedFileDialog(Box::new(CloseButtonClicked)))
-                    }
-                    Mouse(mouse::Event::ButtonReleased(_))
-                    | Touch(iced::touch::Event::FingerLifted { id: _, position: _ }) => {
-                        return get_focused_element_id()
-                    }
-                    _ => {}
                 }
             }
             MachineNextStep => self.machine.next_step(&self.table),
@@ -218,6 +214,10 @@ impl Application for App {
     fn should_exit(&self) -> bool {
         self.should_exit
     }
+
+    fn scale_factor(&self) -> f64 {
+        self.scale_factor
+    }
 }
 
 impl App {
@@ -255,6 +255,40 @@ impl App {
 
         if let Err(_) = res() {
             return error_dialog(self.language.save_file_error_description, self.language);
+        }
+
+        return Command::none();
+    }
+
+    fn handle_events(&mut self, e: Event) -> Command<Message> {
+        use iced_native::Event::*;
+        match e {
+            Keyboard(keyboard::Event::KeyPressed {
+                key_code,
+                modifiers,
+            }) => {
+                if modifiers.control() {
+                    match key_code {
+                        KeyCode::Plus => self.scale_factor += SCALE_FACTOR_STEP,
+                        KeyCode::Minus => self.scale_factor -= SCALE_FACTOR_STEP,
+                        _ => {}
+                    }
+
+                    if self.scale_factor < SCALE_FACTOR_STEP {
+                        self.scale_factor = SCALE_FACTOR_STEP;
+                    }
+                }
+            }
+            Window(window::Event::CloseRequested) => {
+                return redirect(Message::WithUnsavedFileDialog(Box::new(
+                    Message::CloseButtonClicked,
+                )))
+            }
+            Mouse(mouse::Event::ButtonReleased(_))
+            | Touch(iced::touch::Event::FingerLifted { id: _, position: _ }) => {
+                return get_focused_element_id()
+            }
+            _ => {}
         }
 
         return Command::none();
