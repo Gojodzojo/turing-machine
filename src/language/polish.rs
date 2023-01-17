@@ -1,0 +1,38 @@
+use crate::constants::FILE_EXTENSION;
+
+use super::Language;
+
+pub const POLISH_LANGUAGE: &Language = &Language {
+    language_name: "Polski",
+    app_name: "Maszyna Turinga",
+    open_file_error_description: "Zły format pliku",
+    save_file_error_description: "Nie udało się zapisać pliku",
+    error_message_title: "Błąd",
+    unsaved_file_dialog_title: "Niezapisane zmiany",
+    unsaved_file_dialog_description: "Ten plik zawiera niezapisane zmiany. Czy chcesz je zapisać?",
+    file_filter_name: "Plik Maszyny Turinga",
+    default_filename: const_str::concat!("nowy.", FILE_EXTENSION),
+    initial_tape_input_placeholder: "Wpisz tekst taśmy...",
+    initial_tape_input_label: "Tekst taśmy",
+    initial_cursor_position_input_placeholder: "Ustaw pozycję kursora...",
+    initial_cursor_position_input_label: "Pozycja kursora",
+    tape_length_input_placeholder: "Ustaw długość taśmy...",
+    tape_length_input_label: "Długość taśmy",
+    table_characters_input_placeholder: "Wpisz znaki tabeli...",
+    table_characters_input_label: "Znaki tabeli",
+    table_states_number_input_placeholder: "Ustaw liczbę stanów tabeli...",
+    table_states_number_input_label: "Liczba stanów tabeli",
+    start_machine_button_text: "Start",
+    new_file_button_text: "Nowy plik",
+    open_file_button_text: "Otwórz plik",
+    save_file_button_text: "Zapisz plik",
+    save_file_as_button_text: "Zapisz plik jako",
+    machine_halted_text: "Maszyna zatrzymana",
+    self_timer_interval_none_text: "Brak",
+    self_timer_interval_input_label: "Interwał samowyzwalacza",
+    stop_machine_button_text: "Stop",
+    next_step_button_text: "Następny krok",
+    step_text: "Krok",
+    state_text: "Stan",
+    language_picker_label: "Język aplikacji",
+};

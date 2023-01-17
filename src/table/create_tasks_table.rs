@@ -1,8 +1,8 @@
 use iced::{
     alignment, theme,
     widget::{
-        self, column as ui_column, container, horizontal_rule, row, text,
-        vertical_rule, Container, Row,
+        self, column as ui_column, container, horizontal_rule, row, text, vertical_rule, Container,
+        Row,
     },
     Alignment, Background, Color, Element, Length, Theme,
 };
@@ -14,7 +14,7 @@ use crate::{
     Message,
 };
 
-use super::{Table, blankable_input::blankable_input};
+use super::{blankable_input::blankable_input, Table};
 
 const CELL_HEIGHT: u16 = 50;
 const CELL_WIDTH: u16 = 125;
@@ -158,16 +158,33 @@ fn mutable_cell<'a, F: 'a + Clone + Fn(Task) -> Message>(
         };
         on_task_change(task)
     };
-    
 
     table_cell(
         vec![
-            blankable_input("state", format!("{}", state), focused_widget, Length::Units(20), update_state)
-                .into(),
-            blankable_input("char", format!("{}", character), focused_widget, Length::Units(15), update_char)
-                .into(),
-            blankable_input("direction", format!("{}", direction), focused_widget, Length::Units(15), update_direction)
-                .into(),
+            blankable_input(
+                "St",
+                format!("{}", state),
+                focused_widget,
+                Length::Units(20),
+                update_state,
+            )
+            .into(),
+            blankable_input(
+                "C",
+                format!("{}", character),
+                focused_widget,
+                Length::Units(15),
+                update_char,
+            )
+            .into(),
+            blankable_input(
+                "D",
+                format!("{}", direction),
+                focused_widget,
+                Length::Units(15),
+                update_direction,
+            )
+            .into(),
         ],
         is_selected,
     )
@@ -194,4 +211,3 @@ fn table_cell<'a>(
         .width(Length::Fill)
         .style(theme)
 }
-

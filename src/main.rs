@@ -2,20 +2,23 @@
 #![feature(iter_array_chunks)]
 
 mod constants;
+mod find_focused;
+mod language;
 mod machine;
 mod numeric_input;
 mod scene;
 mod table;
 mod tape;
 mod task;
-mod find_focused;
 
-use constants::{DEFAULT_FILENAME, FILE_EXTENSION, ICON_BYTES, ICON_FORMAT};
+use constants::{FILE_EXTENSION, ICON_BYTES, ICON_FORMAT};
 use find_focused::find_focused;
 use iced::window::Icon;
-use iced::{executor, window, Application, Command, Element, Settings, Subscription, Theme, mouse};
+use iced::{executor, mouse, window, Application, Command, Element, Settings, Subscription, Theme};
 use iced_native::command;
 use iced_native::widget::Id;
+use language::polish::POLISH_LANGUAGE;
+use language::Language;
 use machine::Machine;
 use rfd::{FileDialog, MessageButtons, MessageDialog, MessageLevel};
 use scene::Scene;
@@ -45,7 +48,8 @@ pub struct App {
     was_modified: bool,
     scene: Scene,
     should_exit: bool,
-    focused_widget: Option<Id>
+    focused_widget: Option<Id>,
+    language: &'static Language,
 }
 
 #[derive(Debug, Clone)]
@@ -58,6 +62,7 @@ pub enum Message {
     TableTaskChanged(Task, usize, usize),
     FileToOpenPicked(Option<PathBuf>),
     FileToSavePicked(Option<PathBuf>),
+    LanguageChanged(&'static Language),
     MachineSelfTimerIntervalChange(Option<u32>),
     NewFileClicked,
     OpenFileClicked,
@@ -91,6 +96,7 @@ impl Application for App {
                 scene: Scene::Editor,
                 should_exit: false,
                 focused_widget: None,
+                language: POLISH_LANGUAGE,
             },
             Command::none(),
         )
@@ -99,7 +105,7 @@ impl Application for App {
     fn title(&self) -> String {
         let filename = match &self.file_path {
             Some(path) => path.file_name().unwrap().to_str().unwrap(),
-            None => DEFAULT_FILENAME,
+            None => self.language.default_filename,
         };
 
         let modified_indicator = match self.was_modified {
@@ -107,7 +113,10 @@ impl Application for App {
             false => "",
         };
 
-        format!("Turing Machine - {}{}", filename, modified_indicator)
+        format!(
+            "{} - {}{}",
+            self.language.app_name, filename, modified_indicator
+        )
     }
 
     fn update(&mut self, message: Self::Message) -> Command<Message> {
@@ -117,22 +126,23 @@ impl Application for App {
             FocusedWidget(id) => self.focused_widget = id,
             CloseButtonClicked => self.should_exit = true,
             NewFileClicked => self.new_file(),
+            LanguageChanged(lang) => self.language = lang.into(),
             TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
             TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
             TapeLengthChanged(new_length) => self.tape.set_length(new_length),
             FileToOpenPicked(Some(path)) => return self.open_file(path),
             FileToSavePicked(Some(path)) => return self.save_file(path),
-            OpenFileClicked => return pick_file_to_open(),
-            SaveFileAsClicked => return pick_file_to_save(),
+            OpenFileClicked => return pick_file_to_open_dialog(self.language),
+            SaveFileAsClicked => return pick_file_to_save_dialog(self.language),
             SaveFileClicked => {
                 return match &self.file_path {
                     Some(path) => self.save_file(path.clone()),
-                    None => pick_file_to_save(),
+                    None => pick_file_to_save_dialog(self.language),
                 }
             }
             WithUnsavedFileDialog(callback) => {
                 return match self.was_modified {
-                    true => show_should_save_dialog(callback),
+                    true => unsaved_file_dialog(callback, self.language),
                     false => redirect(*callback),
                 }
             }
@@ -143,7 +153,7 @@ impl Application for App {
                         if let Some(path) = &self.file_path {
                             Command::batch([self.save_file(path.clone()), redirect(*callback)])
                         } else {
-                            pick_file_to_save()
+                            pick_file_to_save_dialog(self.language)
                         }
                     }
                 }
@@ -151,11 +161,15 @@ impl Application for App {
             EventOccurred(e) => {
                 use iced_native::Event::*;
                 match e {
-                    Window(window::Event::CloseRequested) => return redirect(WithUnsavedFileDialog(Box::new(CloseButtonClicked))),
-                    Mouse(mouse::Event::ButtonReleased(_)) | Touch(iced::touch::Event::FingerLifted { id: _, position: _ }) => return get_focused_element_id(),
+                    Window(window::Event::CloseRequested) => {
+                        return redirect(WithUnsavedFileDialog(Box::new(CloseButtonClicked)))
+                    }
+                    Mouse(mouse::Event::ButtonReleased(_))
+                    | Touch(iced::touch::Event::FingerLifted { id: _, position: _ }) => {
+                        return get_focused_element_id()
+                    }
                     _ => {}
                 }
-                
             }
             MachineNextStep => self.machine.next_step(&self.table),
             MachineStarted => {
@@ -224,7 +238,7 @@ impl App {
         };
 
         if let Err(_) = res() {
-            return show_error("Wrong file format");
+            return error_dialog(self.language.open_file_error_description, self.language);
         }
 
         return Command::none();
@@ -240,55 +254,55 @@ impl App {
         };
 
         if let Err(_) = res() {
-            return show_error("Failed to save the file");
+            return error_dialog(self.language.save_file_error_description, self.language);
         }
 
         return Command::none();
     }
 }
 
-fn show_error(description: &'static str) -> Command<Message> {
-    async fn a(description: &str) {
+fn error_dialog(description: &'static str, language: &'static Language) -> Command<Message> {
+    async fn a(description: &str, language: &'static Language) {
         MessageDialog::new()
             .set_level(MessageLevel::Error)
-            .set_title("Error")
+            .set_title(language.error_message_title)
             .set_description(description)
             .set_buttons(MessageButtons::Ok)
             .show();
     }
-    return Command::perform(a(description), Message::ErrorDialogClosed);
+    return Command::perform(a(description, language), Message::ErrorDialogClosed);
 }
 
-fn show_should_save_dialog(callback: Box<Message>) -> Command<Message> {
-    async fn a(callback: Box<Message>) -> (bool, Box<Message>) {
+fn unsaved_file_dialog(callback: Box<Message>, language: &'static Language) -> Command<Message> {
+    async fn a(callback: Box<Message>, language: &'static Language) -> (bool, Box<Message>) {
         let choice = MessageDialog::new()
             .set_level(MessageLevel::Info)
-            .set_title("Unsaved changes")
-            .set_description("This file contains unsaved changes. Do you want to save this file?")
+            .set_title(language.unsaved_file_dialog_title)
+            .set_description(language.unsaved_file_dialog_description)
             .set_buttons(rfd::MessageButtons::YesNo)
             .show();
 
         (choice, callback)
     }
 
-    return Command::perform(a(callback), Message::UnsavedFileDialogAnsweared);
+    return Command::perform(a(callback, language), Message::UnsavedFileDialogAnsweared);
 }
 
-fn pick_file_to_open() -> Command<Message> {
-    async fn a() -> Option<PathBuf> {
+fn pick_file_to_open_dialog(language: &'static Language) -> Command<Message> {
+    async fn a(language: &'static Language) -> Option<PathBuf> {
         FileDialog::new()
-            .add_filter("Turing Machine file", &[FILE_EXTENSION])
+            .add_filter(language.file_filter_name, &[FILE_EXTENSION])
             .pick_file()
     }
 
-    return Command::perform(a(), Message::FileToOpenPicked);
+    return Command::perform(a(language), Message::FileToOpenPicked);
 }
 
-fn pick_file_to_save() -> Command<Message> {
-    async fn a() -> Option<PathBuf> {
+fn pick_file_to_save_dialog(language: &'static Language) -> Command<Message> {
+    async fn a(language: &'static Language) -> Option<PathBuf> {
         let path = FileDialog::new()
-            .add_filter("Turing Machine file", &[FILE_EXTENSION])
-            .set_file_name(DEFAULT_FILENAME)
+            .add_filter(language.file_filter_name, &[FILE_EXTENSION])
+            .set_file_name(language.default_filename)
             .save_file();
 
         if let Some(mut path) = path {
@@ -307,7 +321,7 @@ fn pick_file_to_save() -> Command<Message> {
         return None;
     }
 
-    return Command::perform(a(), Message::FileToSavePicked);
+    return Command::perform(a(language), Message::FileToSavePicked);
 }
 
 fn redirect(message: Message) -> Command<Message> {
@@ -316,5 +330,7 @@ fn redirect(message: Message) -> Command<Message> {
 }
 
 fn get_focused_element_id() -> Command<Message> {
-    return Command::single(command::Action::Widget(iced_native::widget::Action::new(find_focused()).map(Message::FocusedWidget)));
+    return Command::single(command::Action::Widget(
+        iced_native::widget::Action::new(find_focused()).map(Message::FocusedWidget),
+    ));
 }
