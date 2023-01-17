@@ -114,6 +114,7 @@ fn left_column<'a>(app: &'a App) -> Element<'a, Message> {
         table_states_number_input,
         app.language.table_characters_input_label,
         table_characters_input,
+        app.language.language_picker_label,
         language_pick_list,
         start_button,
         new_file_button,

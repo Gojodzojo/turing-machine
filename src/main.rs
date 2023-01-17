@@ -13,7 +13,6 @@ mod task;
 
 use constants::{FILE_EXTENSION, ICON_BYTES, ICON_FORMAT};
 use find_focused::find_focused;
-use iced::keyboard::KeyCode;
 use iced::window::Icon;
 use iced::{
     executor, keyboard, mouse, window, Application, Command, Element, Event, Settings,
@@ -268,9 +267,10 @@ impl App {
                 modifiers,
             }) => {
                 if modifiers.control() {
+                    use iced::keyboard::KeyCode::*;
                     match key_code {
-                        KeyCode::Plus => self.scale_factor += SCALE_FACTOR_STEP,
-                        KeyCode::Minus => self.scale_factor -= SCALE_FACTOR_STEP,
+                        Plus | NumpadAdd => self.scale_factor += SCALE_FACTOR_STEP,
+                        Minus | NumpadSubtract => self.scale_factor -= SCALE_FACTOR_STEP,
                         _ => {}
                     }
 
