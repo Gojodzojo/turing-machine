@@ -2,7 +2,7 @@
 #![feature(iter_array_chunks)]
 
 mod constants;
-mod find_focused;
+mod focus_actions;
 mod language;
 mod machine;
 mod numeric_input;
@@ -12,7 +12,7 @@ mod tape;
 mod task;
 
 use constants::{FILE_EXTENSION, ICON_BYTES, ICON_FORMAT};
-use find_focused::find_focused;
+use focus_actions::find_focused;
 use iced::window::Icon;
 use iced::{
     executor, keyboard, mouse, window, Application, Command, Element, Event, Settings,
@@ -266,17 +266,21 @@ impl App {
                 key_code,
                 modifiers,
             }) => {
-                if modifiers.control() {
-                    use iced::keyboard::KeyCode::*;
-                    match key_code {
-                        Plus | NumpadAdd => self.scale_factor += SCALE_FACTOR_STEP,
-                        Minus | NumpadSubtract => self.scale_factor -= SCALE_FACTOR_STEP,
-                        _ => {}
-                    }
+                use iced::keyboard::KeyCode::*;
 
-                    if self.scale_factor < SCALE_FACTOR_STEP {
-                        self.scale_factor = SCALE_FACTOR_STEP;
+                match key_code {
+                    Plus | NumpadAdd if modifiers.control() => {
+                        self.scale_factor += SCALE_FACTOR_STEP
                     }
+                    Minus | NumpadSubtract if modifiers.control() => {
+                        self.scale_factor -= SCALE_FACTOR_STEP
+                    }
+                    Tab => return focus_next(),
+                    _ => {}
+                }
+
+                if self.scale_factor < SCALE_FACTOR_STEP {
+                    self.scale_factor = SCALE_FACTOR_STEP;
                 }
             }
             Window(window::Event::CloseRequested) => {
@@ -366,5 +370,12 @@ fn redirect(message: Message) -> Command<Message> {
 fn get_focused_element_id() -> Command<Message> {
     return Command::single(command::Action::Widget(
         iced_native::widget::Action::new(find_focused()).map(Message::FocusedWidget),
+    ));
+}
+
+fn focus_next() -> Command<Message> {
+    return Command::single(command::Action::Widget(
+        iced_native::widget::Action::new(crate::focus_actions::focus_next())
+            .map(Message::FocusedWidget),
     ));
 }
