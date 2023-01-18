@@ -1,5 +1,5 @@
 use iced::{
-    widget::{self, text_input::Id as TxtId, text_input as txt_input},
+    widget::{self, text_input as txt_input, text_input::Id as TxtId},
     Element, Length,
 };
 use iced_lazy::Component;

@@ -1,8 +1,8 @@
 use iced::{
     alignment, theme,
     widget::{
-        self, column as ui_column, container, horizontal_rule, row, text, vertical_rule, Container,
-        Row,
+        self, column as ui_column, container, horizontal_rule, row, scrollable, text,
+        vertical_rule, Container, Row,
     },
     Alignment, Background, Color, Element, Length, Theme,
 };
@@ -16,7 +16,7 @@ use crate::{
 
 use super::{blankable_input::blankable_input, Table};
 
-const CELL_HEIGHT: u16 = 50;
+const CELL_HEIGHT: u16 = 40;
 const CELL_WIDTH: u16 = 125;
 
 pub fn create_tasks_table<'a>(
@@ -25,7 +25,7 @@ pub fn create_tasks_table<'a>(
     selected_column: char,
     selected_row: usize,
     focused_widget: &'a Option<Id>,
-) -> Row<'a, Message> {
+) -> Element<'a, Message> {
     let mut tasks_table: Row<Message> =
         row![vertical_rule(0)]
             .align_items(Alignment::Fill)
@@ -77,7 +77,7 @@ pub fn create_tasks_table<'a>(
         tasks_table = tasks_table.push(col).push(vertical_rule(0));
     }
 
-    tasks_table
+    scrollable(tasks_table).into()
 }
 
 fn immutable_cell<'a>(
@@ -90,8 +90,8 @@ fn immutable_cell<'a>(
 ) -> Container<'a, Message> {
     table_cell(
         vec![
-            text(state).width(Length::Units(10)).into(),
-            text(character).width(Length::Units(10)).into(),
+            text(state).width(Length::Units(20)).into(),
+            text(character).width(Length::Units(20)).into(),
             text(direction).width(Length::Units(10)).into(),
         ],
         is_selected,
@@ -173,7 +173,7 @@ fn mutable_cell<'a, F: 'a + Clone + Fn(Task) -> Message>(
                 "C",
                 format!("{}", character),
                 focused_widget,
-                Length::Units(15),
+                Length::Units(20),
                 update_char,
             )
             .into(),
@@ -181,7 +181,7 @@ fn mutable_cell<'a, F: 'a + Clone + Fn(Task) -> Message>(
                 "D",
                 format!("{}", direction),
                 focused_widget,
-                Length::Units(15),
+                Length::Units(10),
                 update_direction,
             )
             .into(),
