@@ -1,9 +1,27 @@
-use iced_native::widget::{
-    operation::{Focusable, Outcome},
-    Id, Operation,
+use iced::Command;
+use iced_native::{
+    command,
+    widget::{
+        operation::{Focusable, Outcome},
+        Id, Operation,
+    },
 };
 
-pub fn find_focused() -> impl Operation<Option<Id>> {
+use crate::Message;
+
+pub fn get_focused_element_id() -> Command<Message> {
+    return Command::single(command::Action::Widget(
+        iced_native::widget::Action::new(find_focused()).map(Message::FocusedWidget),
+    ));
+}
+
+pub fn focus_next() -> Command<Message> {
+    return Command::single(command::Action::Widget(
+        iced_native::widget::Action::new(focus_next_internal()).map(Message::FocusedWidget),
+    ));
+}
+
+fn find_focused() -> impl Operation<Option<Id>> {
     struct FindFocused {
         focused: Option<Id>,
     }
@@ -32,7 +50,7 @@ pub fn find_focused() -> impl Operation<Option<Id>> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct Count {
+struct Count {
     /// The index of the current focused widget, if any.
     focused: Option<usize>,
 
@@ -40,7 +58,7 @@ pub struct Count {
     total: usize,
 }
 
-pub fn count<T, O>(f: fn(Count) -> O) -> impl Operation<T>
+fn count<T, O>(f: fn(Count) -> O) -> impl Operation<T>
 where
     O: Operation<T> + 'static,
 {
@@ -80,7 +98,7 @@ where
     }
 }
 
-pub fn focus_next() -> impl Operation<Option<Id>> {
+fn focus_next_internal() -> impl Operation<Option<Id>> {
     struct FocusNext {
         count: Count,
         current: usize,
