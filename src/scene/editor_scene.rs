@@ -4,7 +4,7 @@ use crate::{
     App, Message,
 };
 use iced::{
-    widget::{button, column as ui_column, pick_list, text_input},
+    widget::{button, column as ui_column, pick_list, scrollable, text_input},
     Element, Length,
 };
 
@@ -103,26 +103,29 @@ fn left_column<'a>(app: &'a App) -> Element<'a, Message> {
     .padding(10)
     .width(Length::Fill);
 
-    ui_column![
-        app.language.initial_tape_input_label,
-        initial_tape_input,
-        app.language.initial_cursor_position_input_label,
-        initial_cursor_position_input,
-        app.language.tape_length_input_label,
-        tape_length_input,
-        app.language.table_states_number_input_label,
-        table_states_number_input,
-        app.language.table_characters_input_label,
-        table_characters_input,
-        app.language.language_picker_label,
-        language_pick_list,
-        start_button,
-        new_file_button,
-        open_file_button,
-        save_file_button,
-        save_file_as_button,
-    ]
-    .width(Length::Units(200))
-    .spacing(10)
+    scrollable(
+        ui_column![
+            app.language.initial_tape_input_label,
+            initial_tape_input,
+            app.language.initial_cursor_position_input_label,
+            initial_cursor_position_input,
+            app.language.tape_length_input_label,
+            tape_length_input,
+            app.language.table_states_number_input_label,
+            table_states_number_input,
+            app.language.table_characters_input_label,
+            table_characters_input,
+            app.language.language_picker_label,
+            language_pick_list,
+            start_button,
+            new_file_button,
+            open_file_button,
+            save_file_button,
+            save_file_as_button,
+        ]
+        .width(Length::Units(215))
+        .padding(15)
+        .spacing(10),
+    )
     .into()
 }
