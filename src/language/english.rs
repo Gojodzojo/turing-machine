@@ -1,4 +1,4 @@
-use crate::constants::FILE_EXTENSION;
+use crate::{constants::FILE_EXTENSION, my_theme::ThemeNames};
 
 use super::Language;
 
@@ -35,4 +35,9 @@ pub const ENGLISH_LANGUAGE: &Language = &Language {
     next_step_button_text: "Next step",
     step_text: "Step",
     state_text: "State",
+    theme_picker_label: "Theme",
+    theme_names: ThemeNames {
+        dark: "Dark",
+        light: "Light",
+    },
 };

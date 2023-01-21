@@ -6,6 +6,7 @@ mod dialogs;
 mod focus_actions;
 mod language;
 mod machine;
+mod my_theme;
 mod numeric_input;
 mod scene;
 mod table;
@@ -23,6 +24,7 @@ use iced_native::widget::Id;
 use language::polish::POLISH_LANGUAGE;
 use language::Language;
 use machine::Machine;
+use my_theme::MyTheme;
 use scene::Scene;
 use std::fs::File;
 use std::io::{self, BufReader};
@@ -58,6 +60,7 @@ pub struct App {
     language: &'static Language,
     scale_factor: f64,
     is_side_column_opened: bool,
+    theme: Theme,
 }
 
 #[derive(Debug, Clone)]
@@ -72,6 +75,7 @@ pub enum Message {
     FileToSavePicked(Option<PathBuf>),
     LanguageChanged(&'static Language),
     MachineSelfTimerIntervalChange(Option<u32>),
+    ThemeChanged(MyTheme),
     ToggleSideColumnClicked,
     NewFileClicked,
     OpenFileClicked,
@@ -108,6 +112,7 @@ impl Application for App {
                 language: POLISH_LANGUAGE,
                 scale_factor: 1.0,
                 is_side_column_opened: false,
+                theme: Theme::Light,
             },
             Command::none(),
         )
@@ -139,6 +144,7 @@ impl Application for App {
             CloseButtonClicked => self.should_exit = true,
             NewFileClicked => self.new_file(),
             ToggleSideColumnClicked => self.is_side_column_opened = !self.is_side_column_opened,
+            ThemeChanged(theme) => self.theme = theme.theme,
             LanguageChanged(lang) => self.language = lang.into(),
             TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
             TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
@@ -221,6 +227,10 @@ impl Application for App {
 
     fn scale_factor(&self) -> f64 {
         self.scale_factor
+    }
+
+    fn theme(&self) -> Theme {
+        self.theme.clone()
     }
 }
 

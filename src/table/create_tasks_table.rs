@@ -4,7 +4,7 @@ use iced::{
         self, column as ui_column, container, horizontal_rule, row, scrollable, text,
         vertical_rule, Container, Row,
     },
-    Alignment, Background, Color, Element, Length, Theme,
+    Alignment, Background, Element, Length, Theme,
 };
 use iced_native::widget::Id;
 
@@ -195,9 +195,13 @@ fn table_cell<'a>(
     is_selected: bool,
 ) -> Container<'a, Message> {
     let theme = if is_selected {
-        let f: fn(&Theme) -> container::Appearance = |_| widget::container::Appearance {
-            background: Some(Background::Color(Color::from_rgba8(0, 0, 0, 0.3))),
-            ..Default::default()
+        let f: fn(&Theme) -> container::Appearance = |t| {
+            let mut color = t.palette().text;
+            color.a = 0.4;
+            widget::container::Appearance {
+                background: Some(Background::Color(color)),
+                ..Default::default()
+            }
         };
         theme::Container::from(f)
     } else {

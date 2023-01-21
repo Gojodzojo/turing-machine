@@ -4,7 +4,7 @@ use iced::{
     Element, Length,
 };
 
-use crate::{language::ALL_LANGUAGES, App, Message};
+use crate::{language::ALL_LANGUAGES, my_theme::MyTheme, App, Message};
 
 pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
     let icon = if app.is_side_column_opened {
@@ -47,6 +47,14 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
             .width(Length::Fill)
             .on_press(Message::SaveFileAsClicked);
 
+        let theme_pick_list = pick_list(
+            MyTheme::all(app.language).to_vec(),
+            Some(MyTheme::from_theme(app.theme.clone(), app.language)),
+            Message::ThemeChanged,
+        )
+        .padding(10)
+        .width(Length::Fill);
+
         let language_picker_label = text("Language")
             .height(Length::Fill)
             .vertical_alignment(alignment::Vertical::Bottom);
@@ -67,6 +75,8 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
             save_file_as_button,
             language_picker_label,
             language_pick_list,
+            app.language.theme_picker_label,
+            theme_pick_list
         ]
         .width(Length::Units(280))
         .spacing(10)

@@ -1,3 +1,5 @@
+use crate::my_theme::ThemeNames;
+
 pub mod english;
 pub mod polish;
 
@@ -54,4 +56,6 @@ pub struct Language {
     pub next_step_button_text: &'static str,
     pub step_text: &'static str,
     pub state_text: &'static str,
+    pub theme_picker_label: &'static str,
+    pub theme_names: ThemeNames,
 }
