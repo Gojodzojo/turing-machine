@@ -35,5 +35,4 @@ pub const ENGLISH_LANGUAGE: &Language = &Language {
     next_step_button_text: "Next step",
     step_text: "Step",
     state_text: "State",
-    language_picker_label: "App language",
 };

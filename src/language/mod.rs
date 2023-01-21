@@ -54,5 +54,4 @@ pub struct Language {
     pub next_step_button_text: &'static str,
     pub step_text: &'static str,
     pub state_text: &'static str,
-    pub language_picker_label: &'static str,
 }

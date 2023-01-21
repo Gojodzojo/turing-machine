@@ -1,5 +1,6 @@
 mod editor_scene;
 mod machine_scene;
+mod side_column;
 
 use crate::{App, Message};
 use iced::{
@@ -7,7 +8,7 @@ use iced::{
     Element, Length,
 };
 
-use self::{editor_scene::editor_scene, machine_scene::machine_scene};
+use self::{editor_scene::editor_scene, machine_scene::machine_scene, side_column::side_column};
 
 pub enum Scene {
     Editor,
@@ -16,10 +17,13 @@ pub enum Scene {
 
 impl Scene {
     pub fn view<'a>(&self, app: &'a App) -> Element<'a, Message> {
-        match self {
+        let scene = match self {
             Self::Editor => editor_scene(app),
             Self::Machine => machine_scene(app),
-        }
+        };
+        let side_column = side_column(app);
+
+        row![side_column, scene].into()
     }
 }
 

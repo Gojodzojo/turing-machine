@@ -34,5 +34,4 @@ pub const POLISH_LANGUAGE: &Language = &Language {
     next_step_button_text: "Następny krok",
     step_text: "Krok",
     state_text: "Stan",
-    language_picker_label: "Język aplikacji",
 };

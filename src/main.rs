@@ -57,6 +57,7 @@ pub struct App {
     focused_widget: Option<Id>,
     language: &'static Language,
     scale_factor: f64,
+    is_side_column_opened: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -71,6 +72,7 @@ pub enum Message {
     FileToSavePicked(Option<PathBuf>),
     LanguageChanged(&'static Language),
     MachineSelfTimerIntervalChange(Option<u32>),
+    ToggleSideColumnClicked,
     NewFileClicked,
     OpenFileClicked,
     SaveFileClicked,
@@ -105,6 +107,7 @@ impl Application for App {
                 focused_widget: None,
                 language: POLISH_LANGUAGE,
                 scale_factor: 1.0,
+                is_side_column_opened: false,
             },
             Command::none(),
         )
@@ -135,6 +138,7 @@ impl Application for App {
             FocusedWidget(id) => self.focused_widget = id,
             CloseButtonClicked => self.should_exit = true,
             NewFileClicked => self.new_file(),
+            ToggleSideColumnClicked => self.is_side_column_opened = !self.is_side_column_opened,
             LanguageChanged(lang) => self.language = lang.into(),
             TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
             TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
