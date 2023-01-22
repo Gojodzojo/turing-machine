@@ -41,6 +41,7 @@ pub fn main() -> iced::Result {
     App::run(Settings {
         exit_on_close_request: false,
         window: window::Settings {
+            size: (1500, 800),
             icon: Icon::from_file_data(ICON_BYTES, Some(ICON_FORMAT)).ok(),
             ..window::Settings::default()
         },
@@ -111,7 +112,7 @@ impl Application for App {
                 focused_widget: None,
                 language: POLISH_LANGUAGE,
                 scale_factor: 1.0,
-                is_side_column_opened: false,
+                is_side_column_opened: true,
                 theme: Theme::Light,
             },
             Command::none(),
