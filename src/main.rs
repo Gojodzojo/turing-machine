@@ -291,6 +291,7 @@ impl App {
                     Minus | NumpadSubtract if modifiers.control() => {
                         self.scale_factor -= SCALE_FACTOR_STEP
                     }
+                    S if modifiers.control() => return redirect(Message::SaveFileClicked),
                     Tab => return focus_next(),
                     _ => {}
                 }
