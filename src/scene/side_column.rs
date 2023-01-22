@@ -1,10 +1,10 @@
 use iced::{
     alignment,
-    widget::{button, column as ui_column, pick_list, row, text, vertical_rule},
+    widget::{button, column as ui_column, image, pick_list, row, text, vertical_rule},
     Element, Length,
 };
 
-use crate::{language::ALL_LANGUAGES, my_theme::MyTheme, App, Message};
+use crate::{constants::ICON_BYTES, language::ALL_LANGUAGES, my_theme::MyTheme, App, Message};
 
 pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
     let icon = if app.is_side_column_opened {
@@ -16,6 +16,8 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
     let toggle_btn = button(icon).on_press(Message::ToggleSideColumnClicked);
 
     let column = if app.is_side_column_opened {
+        let img = image(image::Handle::from_memory(ICON_BYTES)).width(Length::Fill);
+
         let app_name = text(app.language.app_name)
             .width(Length::Fill)
             .height(Length::Units(60))
@@ -68,6 +70,7 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
         .width(Length::Fill);
 
         ui_column![
+            img,
             app_name,
             new_file_button,
             open_file_button,
