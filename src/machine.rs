@@ -1,6 +1,11 @@
 use std::time::Duration;
 
-use crate::{constants::DEFAULT_STATE, table::Table, tape::Tape, task::Direction};
+use crate::{
+    constants::{DEFAULT_STATE, MIN_MACHINE_SELF_TIMER_INTERVAL},
+    table::Table,
+    tape::Tape,
+    task::Direction,
+};
 
 pub struct Machine {
     // Surrent state of the machine
@@ -39,6 +44,9 @@ impl Machine {
 
     pub fn set_self_timer_interval(&mut self, new_interval: Option<u32>) {
         self.self_timer_interval = match new_interval {
+            Some(0) => Some(Duration::from_millis(
+                MIN_MACHINE_SELF_TIMER_INTERVAL as u64,
+            )),
             Some(interval) => Some(Duration::from_millis(interval as u64)),
             None => None,
         };

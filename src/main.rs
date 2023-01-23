@@ -22,7 +22,7 @@ use iced::{
     Subscription, Theme,
 };
 use iced_native::widget::Id;
-use language::polish::POLISH_LANGUAGE;
+use language::english::ENGLISH_LANGUAGE;
 use language::Language;
 use machine::Machine;
 use my_theme::MyTheme;
@@ -115,7 +115,7 @@ impl Application for App {
                 scene: Scene::Editor,
                 should_exit: false,
                 focused_widget: None,
-                language: POLISH_LANGUAGE,
+                language: ENGLISH_LANGUAGE,
                 scale_factor: 1.0,
                 is_side_column_opened: true,
                 palette: Palette::LIGHT,

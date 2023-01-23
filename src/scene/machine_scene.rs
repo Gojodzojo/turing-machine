@@ -1,8 +1,5 @@
 use crate::{
-    constants::{
-        MACHINE_SELF_TIMER_INTERVAL_STEP, MIN_MACHINE_SELF_TIMER_INTERVAL,
-        STOP_MACHINE_SELF_TIMER_VALUE,
-    },
+    constants::{MACHINE_SELF_TIMER_INTERVAL_STEP, STOP_MACHINE_SELF_TIMER_VALUE},
     table::create_tasks_table::create_tasks_table,
     tape::create_tape_preview::create_tape_preview,
     App, Message,
@@ -75,7 +72,7 @@ fn left_column<'a>(app: &App) -> Element<'a, Message> {
                 app.language.self_timer_interval_input_label, slider_val_text
             )),
             slider(
-                MIN_MACHINE_SELF_TIMER_INTERVAL..=STOP_MACHINE_SELF_TIMER_VALUE,
+                0..=STOP_MACHINE_SELF_TIMER_VALUE,
                 slider_val,
                 on_slider_change
             )
