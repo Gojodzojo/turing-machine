@@ -1,6 +1,6 @@
 use iced::{
     alignment,
-    widget::{button, column as ui_column, image, pick_list, row, text, vertical_rule},
+    widget::{button, column as ui_column, container, image, pick_list, row, text, vertical_rule},
     Element, Length,
 };
 
@@ -16,7 +16,10 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
     let toggle_btn = button(icon).on_press(Message::ToggleSideColumnClicked);
 
     let column = if app.is_side_column_opened {
-        let img = image(image::Handle::from_memory(ICON_BYTES)).width(Length::Fill);
+        let img =
+            container(image(image::Handle::from_memory(ICON_BYTES)).width(Length::Units(140)))
+                .width(Length::Fill)
+                .align_x(alignment::Horizontal::Center);
 
         let app_name = text(app.language.app_name)
             .width(Length::Fill)
@@ -49,6 +52,11 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
             .width(Length::Fill)
             .on_press(Message::SaveFileAsClicked);
 
+        let help_button = button(app.language.help_button_text)
+            .padding(10)
+            .width(Length::Fill)
+            .on_press(Message::OpenURL(app.language.help_url));
+
         let theme_pick_list = pick_list(
             MyTheme::all(app.language).to_vec(),
             Some(MyTheme::from_theme(app.theme.clone(), app.language)),
@@ -76,6 +84,7 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
             open_file_button,
             save_file_button,
             save_file_as_button,
+            help_button,
             language_picker_label,
             language_pick_list,
             app.language.theme_picker_label,

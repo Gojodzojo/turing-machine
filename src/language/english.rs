@@ -28,6 +28,8 @@ pub const ENGLISH_LANGUAGE: &Language = &Language {
     open_file_button_text: "Open file",
     save_file_button_text: "Save file",
     save_file_as_button_text: "Save file as",
+    help_button_text: "Help",
+    help_url: "https://github.com/Gojodzojo/turing-machine/blob/main/readmes/README_EN.md",
     machine_halted_text: "Machine halted",
     self_timer_interval_none_text: "None",
     self_timer_interval_input_label: "Self-timer interval",

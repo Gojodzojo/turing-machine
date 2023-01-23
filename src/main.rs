@@ -77,6 +77,7 @@ pub enum Message {
     LanguageChanged(&'static Language),
     MachineSelfTimerIntervalChange(Option<u32>),
     ThemeChanged(MyTheme),
+    OpenURL(&'static str),
     ToggleSideColumnClicked,
     NewFileClicked,
     OpenFileClicked,
@@ -142,6 +143,7 @@ impl Application for App {
         match message {
             EventOccurred(e) => return self.handle_events(e),
             FocusedWidget(id) => self.focused_widget = id,
+            OpenURL(url) => webbrowser::open(url).unwrap_or_else(|e| println!("{}", e)),
             CloseButtonClicked => self.should_exit = true,
             NewFileClicked => self.new_file(),
             ToggleSideColumnClicked => self.is_side_column_opened = !self.is_side_column_opened,

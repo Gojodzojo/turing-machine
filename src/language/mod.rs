@@ -49,6 +49,8 @@ pub struct Language {
     pub open_file_button_text: &'static str,
     pub save_file_button_text: &'static str,
     pub save_file_as_button_text: &'static str,
+    pub help_button_text: &'static str,
+    pub help_url: &'static str,
     pub machine_halted_text: &'static str,
     pub self_timer_interval_none_text: &'static str,
     pub self_timer_interval_input_label: &'static str,
