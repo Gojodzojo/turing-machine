@@ -1,4 +1,4 @@
-use crate::{constants::FILE_EXTENSION, my_theme::ThemeNames};
+use crate::{constants::FILE_EXTENSION, dialogs::AboutProgramDialogLabels, my_theme::ThemeNames};
 
 use super::Language;
 
@@ -29,6 +29,7 @@ pub const POLISH_LANGUAGE: &Language = &Language {
     save_file_as_button_text: "Zapisz plik jako",
     help_button_text: "Pomoc",
     help_url: "https://github.com/Gojodzojo/turing-machine/blob/main/readmes/README_PL.md",
+    about_program_button_text: "O programie",
     machine_halted_text: "Maszyna zatrzymana",
     self_timer_interval_none_text: "Brak",
     self_timer_interval_input_label: "Interwał samowyzwalacza",
@@ -41,5 +42,11 @@ pub const POLISH_LANGUAGE: &Language = &Language {
         dark: "Ciemny",
         light: "Jasny",
         tokyo_night: "Tokyo Night",
+    },
+    about_program_dialog_labels: AboutProgramDialogLabels {
+        program_name_label: "Nazwa programu",
+        author_label: "Autor",
+        program_version_label: "Wersja programu",
+        repository_label: "Repozytorium",
     },
 };

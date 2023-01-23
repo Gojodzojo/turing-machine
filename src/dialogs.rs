@@ -70,3 +70,35 @@ pub fn pick_file_to_save_dialog(language: &'static Language) -> Command<Message>
 
     return Command::perform(a(language), Message::FileToSavePicked);
 }
+
+#[derive(PartialEq, Eq)]
+pub struct AboutProgramDialogLabels {
+    pub program_name_label: &'static str,
+    pub author_label: &'static str,
+    pub program_version_label: &'static str,
+    pub repository_label: &'static str,
+}
+
+pub fn about_program_dialog(language: &'static Language) -> Command<Message> {
+    async fn a(language: &'static Language) {
+        let text = format!(
+            "{}: Turing Machine
+{}: Mateusz Goik
+{}: {}
+{}: https://github.com/Gojodzojo/turing-machine",
+            language.about_program_dialog_labels.program_name_label,
+            language.about_program_dialog_labels.author_label,
+            language.about_program_dialog_labels.program_version_label,
+            option_env!("CARGO_PKG_VERSION").unwrap(),
+            language.about_program_dialog_labels.repository_label
+        );
+
+        MessageDialog::new()
+            .set_level(MessageLevel::Info)
+            .set_title(language.about_program_button_text)
+            .set_description(&text)
+            .set_buttons(MessageButtons::Ok)
+            .show();
+    }
+    return Command::perform(a(language), Message::ErrorDialogClosed);
+}

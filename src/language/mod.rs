@@ -1,4 +1,4 @@
-use crate::my_theme::ThemeNames;
+use crate::{dialogs::AboutProgramDialogLabels, my_theme::ThemeNames};
 
 pub mod english;
 pub mod polish;
@@ -51,6 +51,7 @@ pub struct Language {
     pub save_file_as_button_text: &'static str,
     pub help_button_text: &'static str,
     pub help_url: &'static str,
+    pub about_program_button_text: &'static str,
     pub machine_halted_text: &'static str,
     pub self_timer_interval_none_text: &'static str,
     pub self_timer_interval_input_label: &'static str,
@@ -60,4 +61,5 @@ pub struct Language {
     pub state_text: &'static str,
     pub theme_picker_label: &'static str,
     pub theme_names: ThemeNames,
+    pub about_program_dialog_labels: AboutProgramDialogLabels,
 }

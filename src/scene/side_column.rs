@@ -57,6 +57,11 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
             .width(Length::Fill)
             .on_press(Message::OpenURL(app.language.help_url));
 
+        let about_program_button = button(app.language.about_program_button_text)
+            .padding(10)
+            .width(Length::Fill)
+            .on_press(Message::AboutProgramClicked);
+
         let theme_pick_list = pick_list(
             MyTheme::all(app.language).to_vec(),
             Some(MyTheme::from_palette(app.palette.clone(), app.language)),
@@ -85,6 +90,7 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
             save_file_button,
             save_file_as_button,
             help_button,
+            about_program_button,
             language_picker_label,
             language_pick_list,
             app.language.theme_picker_label,

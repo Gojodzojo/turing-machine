@@ -36,7 +36,9 @@ use tape::Tape;
 use task::Task;
 
 use crate::constants::SCALE_FACTOR_STEP;
-use crate::dialogs::{pick_file_to_open_dialog, pick_file_to_save_dialog, unsaved_file_dialog};
+use crate::dialogs::{
+    about_program_dialog, pick_file_to_open_dialog, pick_file_to_save_dialog, unsaved_file_dialog,
+};
 use crate::focus_actions::{focus_next, get_focused_element_id};
 
 pub fn main() -> iced::Result {
@@ -80,6 +82,7 @@ pub enum Message {
     MachineSelfTimerIntervalChange(Option<u32>),
     ThemeChanged(MyTheme),
     OpenURL(&'static str),
+    AboutProgramClicked,
     ToggleSideColumnClicked,
     NewFileClicked,
     OpenFileClicked,
@@ -148,6 +151,7 @@ impl Application for App {
             EventOccurred(e) => return self.handle_events(e),
             FocusedWidget(id) => self.focused_widget = id,
             OpenURL(url) => webbrowser::open(url).unwrap_or_else(|e| println!("{}", e)),
+            AboutProgramClicked => return about_program_dialog(self.language),
             CloseButtonClicked => self.should_exit = true,
             NewFileClicked => self.new_file(),
             ToggleSideColumnClicked => self.is_side_column_opened = !self.is_side_column_opened,
