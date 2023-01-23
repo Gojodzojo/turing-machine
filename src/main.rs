@@ -27,6 +27,7 @@ use language::Language;
 use machine::Machine;
 use my_theme::MyTheme;
 use scene::Scene;
+use std::env;
 use std::fs::File;
 use std::io::{self, BufReader};
 use std::path::PathBuf;
@@ -102,6 +103,8 @@ impl Application for App {
     type Flags = ();
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
+        let file_path = env::args().nth(1).map(|s| PathBuf::from(s));
+
         (
             Self {
                 table: Table::new_empty(),
@@ -117,7 +120,7 @@ impl Application for App {
                 is_side_column_opened: true,
                 palette: Palette::LIGHT,
             },
-            Command::none(),
+            redirect(Message::FileToOpenPicked(file_path)),
         )
     }
 
