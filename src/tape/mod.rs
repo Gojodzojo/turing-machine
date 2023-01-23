@@ -50,6 +50,13 @@ impl Tape {
             new_chars.drain(self.length..);
         }
 
+        new_chars = new_chars.chars().fold("".to_string(), |mut acc, c| {
+            if !c.is_whitespace() {
+                acc.push(c);
+            }
+            acc
+        });
+
         let first_char_position = (self.length - new_chars.len()) / 2;
         let post_last_char_position = first_char_position + new_chars.len();
         let replace_range = first_char_position..post_last_char_position;

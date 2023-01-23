@@ -128,11 +128,12 @@ fn mutable_cell<'a, F: 'a + Clone + Fn(Task) -> Message>(
 
     let c = on_task_change.clone();
     let update_char = move |char_str: String| {
-        let character = if char_str.len() == 0 {
-            EMPTY_CHAR
-        } else {
-            char_str.chars().last().unwrap()
+        let character = match char_str.chars().last() {
+            None => EMPTY_CHAR,
+            Some(c) if c.is_whitespace() => EMPTY_CHAR,
+            Some(c) => c,
         };
+
         let task = Task {
             character,
             direction,
