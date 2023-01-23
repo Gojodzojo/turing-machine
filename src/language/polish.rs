@@ -40,5 +40,6 @@ pub const POLISH_LANGUAGE: &Language = &Language {
     theme_names: ThemeNames {
         dark: "Ciemny",
         light: "Jasny",
+        tokyo_night: "Tokyo Night",
     },
 };

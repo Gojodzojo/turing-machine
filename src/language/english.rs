@@ -41,5 +41,6 @@ pub const ENGLISH_LANGUAGE: &Language = &Language {
     theme_names: ThemeNames {
         dark: "Dark",
         light: "Light",
+        tokyo_night: "Tokyo Night",
     },
 };

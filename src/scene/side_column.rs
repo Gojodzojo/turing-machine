@@ -59,7 +59,7 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
 
         let theme_pick_list = pick_list(
             MyTheme::all(app.language).to_vec(),
-            Some(MyTheme::from_theme(app.theme.clone(), app.language)),
+            Some(MyTheme::from_palette(app.palette.clone(), app.language)),
             Message::ThemeChanged,
         )
         .padding(10)

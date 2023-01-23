@@ -1,5 +1,6 @@
 use iced::{
-    alignment, theme,
+    alignment,
+    theme::{self, palette::Pair},
     widget::{
         self, column as ui_column, container, horizontal_rule, row, scrollable, text,
         vertical_rule, Container, Row,
@@ -196,10 +197,11 @@ fn table_cell<'a>(
 ) -> Container<'a, Message> {
     let theme = if is_selected {
         let f: fn(&Theme) -> container::Appearance = |t| {
-            let mut color = t.palette().text;
-            color.a = 0.4;
+            let Pair { color, text } = t.extended_palette().background.strong;
+
             widget::container::Appearance {
                 background: Some(Background::Color(color)),
+                text_color: Some(text),
                 ..Default::default()
             }
         };

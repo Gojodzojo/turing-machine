@@ -15,6 +15,7 @@ mod task;
 
 use constants::{ICON_BYTES, ICON_FORMAT};
 use dialogs::error_dialog;
+use iced::theme::{self, Palette};
 use iced::window::Icon;
 use iced::{
     executor, keyboard, mouse, window, Application, Command, Element, Event, Settings,
@@ -61,7 +62,7 @@ pub struct App {
     language: &'static Language,
     scale_factor: f64,
     is_side_column_opened: bool,
-    theme: Theme,
+    palette: Palette,
 }
 
 #[derive(Debug, Clone)]
@@ -114,7 +115,7 @@ impl Application for App {
                 language: POLISH_LANGUAGE,
                 scale_factor: 1.0,
                 is_side_column_opened: true,
-                theme: Theme::Light,
+                palette: Palette::LIGHT,
             },
             Command::none(),
         )
@@ -147,7 +148,7 @@ impl Application for App {
             CloseButtonClicked => self.should_exit = true,
             NewFileClicked => self.new_file(),
             ToggleSideColumnClicked => self.is_side_column_opened = !self.is_side_column_opened,
-            ThemeChanged(theme) => self.theme = theme.theme,
+            ThemeChanged(theme) => self.palette = theme.palette,
             LanguageChanged(lang) => self.language = lang.into(),
             TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
             TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
@@ -233,7 +234,7 @@ impl Application for App {
     }
 
     fn theme(&self) -> Theme {
-        self.theme.clone()
+        theme::Theme::Custom(Box::new(theme::Custom::new(self.palette.clone())))
     }
 }
 
