@@ -5,7 +5,7 @@ use std::{
     str::FromStr,
 };
 
-use dirs::home_dir;
+use dirs::data_dir;
 use iced::theme::Palette;
 
 use crate::{
@@ -49,12 +49,8 @@ pub fn save_config(app: &App) -> io::Result<()> {
 }
 
 fn get_config_path() -> PathBuf {
-    #[cfg(target_family = "windows")]
-    return PathBuf::from("C:\\Program Files (x86)\\turing-machine\\config.txt");
-
-    #[cfg(target_family = "unix")]
-    return home_dir()
+    data_dir()
         .unwrap()
-        .join(".turing-machine")
-        .join("config.txt");
+        .join("turing-machine")
+        .join("config.txt")
 }
