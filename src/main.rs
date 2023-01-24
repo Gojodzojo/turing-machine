@@ -1,6 +1,7 @@
 #![windows_subsystem = "windows"]
 #![feature(iter_array_chunks)]
 
+mod config;
 mod constants;
 mod dialogs;
 mod focus_actions;
@@ -13,6 +14,7 @@ mod table;
 mod tape;
 mod task;
 
+use config::load_config;
 use constants::{ICON_BYTES, ICON_FORMAT};
 use dialogs::error_dialog;
 use iced::theme::{self, Palette};
@@ -28,6 +30,7 @@ use machine::Machine;
 use my_theme::MyTheme;
 use scene::Scene;
 use std::env;
+use std::fmt::Display;
 use std::fs::File;
 use std::io::{self, BufReader};
 use std::path::PathBuf;
@@ -35,6 +38,7 @@ use table::Table;
 use tape::Tape;
 use task::Task;
 
+use crate::config::save_config;
 use crate::constants::SCALE_FACTOR_STEP;
 use crate::dialogs::{
     about_program_dialog, pick_file_to_open_dialog, pick_file_to_save_dialog, unsaved_file_dialog,
@@ -106,6 +110,7 @@ impl Application for App {
     type Flags = ();
 
     fn new(_flags: ()) -> (Self, Command<Message>) {
+        let (language, palette) = load_config().unwrap_or((ENGLISH_LANGUAGE, Palette::LIGHT));
         let file_path = env::args().nth(1).map(|s| PathBuf::from(s));
 
         (
@@ -118,10 +123,10 @@ impl Application for App {
                 scene: Scene::Editor,
                 should_exit: false,
                 focused_widget: None,
-                language: ENGLISH_LANGUAGE,
+                language,
                 scale_factor: 1.0,
                 is_side_column_opened: true,
-                palette: Palette::LIGHT,
+                palette,
             },
             redirect(Message::FileToOpenPicked(file_path)),
         )
@@ -150,13 +155,19 @@ impl Application for App {
         match message {
             EventOccurred(e) => return self.handle_events(e),
             FocusedWidget(id) => self.focused_widget = id,
-            OpenURL(url) => webbrowser::open(url).unwrap_or_else(|e| println!("{}", e)),
+            OpenURL(url) => webbrowser::open(url).unwrap_or_else(print_to_stderr),
             AboutProgramClicked => return about_program_dialog(self.language),
             CloseButtonClicked => self.should_exit = true,
             NewFileClicked => self.new_file(),
             ToggleSideColumnClicked => self.is_side_column_opened = !self.is_side_column_opened,
-            ThemeChanged(theme) => self.palette = theme.palette,
-            LanguageChanged(lang) => self.language = lang.into(),
+            ThemeChanged(theme) => {
+                self.palette = theme.palette;
+                save_config(self).unwrap_or_else(print_to_stderr);
+            }
+            LanguageChanged(language) => {
+                self.language = language;
+                save_config(self).unwrap_or_else(print_to_stderr);
+            }
             TapeInputCharsChanged(new_chars) => self.tape.set_chars(new_chars),
             TapeInputCursorPositionChanged(position) => self.tape.set_cursor_position(position),
             TapeLengthChanged(new_length) => self.tape.set_length(new_length),
@@ -329,4 +340,8 @@ impl App {
 fn redirect(message: Message) -> Command<Message> {
     async fn noop() {}
     return Command::perform(noop(), |_| message);
+}
+
+fn print_to_stderr(e: impl Display) {
+    eprintln!("{}", e);
 }

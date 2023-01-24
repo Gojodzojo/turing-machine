@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::{dialogs::AboutProgramDialogLabels, my_theme::ThemeNames};
 
 pub mod english;
@@ -20,6 +22,20 @@ impl std::fmt::Debug for Language {
 impl PartialEq for Language {
     fn eq(&self, other: &Self) -> bool {
         self.language_name == other.language_name
+    }
+}
+
+impl FromStr for &Language {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for language in ALL_LANGUAGES {
+            if s == language.language_name {
+                return Ok(language);
+            }
+        }
+
+        Err(())
     }
 }
 

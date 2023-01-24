@@ -1,6 +1,8 @@
+use std::str::FromStr;
+
 use iced::{theme::Palette, Color};
 
-use crate::language::Language;
+use crate::language::{english::ENGLISH_LANGUAGE, Language};
 
 impl std::fmt::Display for MyTheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -18,7 +20,7 @@ const TOKYO_NIGHT_PALETTE: Palette = Palette {
 
 #[derive(Debug, Clone)]
 pub struct MyTheme {
-    theme_name: &'static str,
+    pub theme_name: &'static str,
     pub palette: Palette,
 }
 
@@ -30,6 +32,20 @@ impl PartialEq for MyTheme {
 
 impl Eq for MyTheme {
     fn assert_receiver_is_total_eq(&self) {}
+}
+
+impl FromStr for MyTheme {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for theme in Self::all(ENGLISH_LANGUAGE) {
+            if s == theme.theme_name {
+                return Ok(theme);
+            }
+        }
+
+        Err(())
+    }
 }
 
 impl MyTheme {
