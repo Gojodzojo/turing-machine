@@ -64,7 +64,6 @@ pub struct App {
     file_path: Option<PathBuf>,
     was_modified: bool,
     scene: Scene,
-    should_exit: bool,
     focused_widget: Option<Id>,
     language: &'static Language,
     scale_factor: f64,
@@ -121,7 +120,6 @@ impl Application for App {
                 file_path: None,
                 was_modified: false,
                 scene: Scene::Editor,
-                should_exit: false,
                 focused_widget: None,
                 language,
                 scale_factor: 1.0,
@@ -157,7 +155,7 @@ impl Application for App {
             FocusedWidget(id) => self.focused_widget = id,
             OpenURL(url) => webbrowser::open(url).unwrap_or_else(print_to_stderr),
             AboutProgramClicked => return about_program_dialog(self.language),
-            CloseButtonClicked => self.should_exit = true,
+            CloseButtonClicked => return window::close(),
             NewFileClicked => self.new_file(),
             ToggleSideColumnClicked => self.is_side_column_opened = !self.is_side_column_opened,
             ThemeChanged(theme) => {
@@ -241,10 +239,6 @@ impl Application for App {
         }
 
         Subscription::batch(subscriptions)
-    }
-
-    fn should_exit(&self) -> bool {
-        self.should_exit
     }
 
     fn scale_factor(&self) -> f64 {
