@@ -2,12 +2,12 @@ use iced::{
     alignment,
     theme::{self, palette::Pair},
     widget::{
-        self, column as ui_column, container, horizontal_rule, row, scrollable, text,
-        vertical_rule, Container, Row,
+        self, column as ui_column, container, horizontal_rule, row, scrollable as ui_scrollable,
+        text, vertical_rule, Container, Row,
     },
     Alignment, Background, Element, Length, Theme,
 };
-use iced_native::widget::Id;
+use iced_native::widget::{scrollable, Id};
 
 use crate::{
     constants::{DEFAULT_STATE, EMPTY_CHAR},
@@ -78,7 +78,9 @@ pub fn create_tasks_table<'a>(
         tasks_table = tasks_table.push(col).push(vertical_rule(0));
     }
 
-    scrollable(tasks_table).into()
+    ui_scrollable(tasks_table)
+        .horizontal_scroll(scrollable::Properties::default())
+        .into()
 }
 
 fn immutable_cell<'a>(
