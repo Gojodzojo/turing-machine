@@ -10,6 +10,21 @@ use iced::{
 
 use super::scene_frame;
 
+#[derive(PartialEq, Eq)]
+pub struct EditorSceneTexts {
+    pub initial_tape_input_placeholder: &'static str,
+    pub initial_tape_input_label: &'static str,
+    pub initial_cursor_position_input_placeholder: &'static str,
+    pub initial_cursor_position_input_label: &'static str,
+    pub tape_length_input_placeholder: &'static str,
+    pub tape_length_input_label: &'static str,
+    pub table_characters_input_placeholder: &'static str,
+    pub table_characters_input_label: &'static str,
+    pub table_states_number_input_placeholder: &'static str,
+    pub table_states_number_input_label: &'static str,
+    pub start_machine_button_text: &'static str,
+}
+
 pub fn editor_scene<'a>(app: &'a App) -> Element<'a, Message> {
     let left_column = left_column(app);
 
@@ -27,8 +42,22 @@ pub fn editor_scene<'a>(app: &'a App) -> Element<'a, Message> {
 }
 
 fn left_column<'a>(app: &'a App) -> Element<'a, Message> {
+    let EditorSceneTexts {
+        initial_tape_input_placeholder,
+        initial_tape_input_label,
+        initial_cursor_position_input_placeholder,
+        initial_cursor_position_input_label,
+        tape_length_input_placeholder,
+        tape_length_input_label,
+        table_characters_input_placeholder,
+        table_characters_input_label,
+        table_states_number_input_placeholder,
+        table_states_number_input_label,
+        start_machine_button_text,
+    } = app.language.editor_scene_texts;
+
     let initial_tape_input = text_input(
-        app.language.initial_tape_input_placeholder,
+        initial_tape_input_placeholder,
         app.tape.get_chars_without_margin(),
         Message::TapeInputCharsChanged,
     )
@@ -36,14 +65,14 @@ fn left_column<'a>(app: &'a App) -> Element<'a, Message> {
     .size(20);
 
     let initial_cursor_position_input = numeric_input(
-        app.language.initial_cursor_position_input_placeholder,
+        initial_cursor_position_input_placeholder,
         app.tape.get_cursor_position(),
         &app.focused_widget,
         Message::TapeInputCursorPositionChanged,
     );
 
     let tape_length_input = numeric_input(
-        app.language.tape_length_input_placeholder,
+        tape_length_input_placeholder,
         app.tape.get_length(),
         &app.focused_widget,
         Message::TapeLengthChanged,
@@ -51,7 +80,7 @@ fn left_column<'a>(app: &'a App) -> Element<'a, Message> {
     .can_be_negative(false);
 
     let table_characters_input = text_input(
-        app.language.table_characters_input_placeholder,
+        table_characters_input_placeholder,
         &app.table.get_characters(),
         &Message::TableCharactersChanged,
     )
@@ -59,28 +88,28 @@ fn left_column<'a>(app: &'a App) -> Element<'a, Message> {
     .size(20);
 
     let table_states_number_input = numeric_input(
-        app.language.table_states_number_input_placeholder,
+        table_states_number_input_placeholder,
         app.table.get_states_number(),
         &app.focused_widget,
         Message::TableStatesNumberChanged,
     )
     .can_be_negative(false);
 
-    let start_button = button(app.language.start_machine_button_text)
+    let start_button = button(start_machine_button_text)
         .padding(10)
         .width(Length::Fill)
         .on_press(Message::MachineStarted);
 
     ui_column![
-        app.language.initial_tape_input_label,
+        initial_tape_input_label,
         initial_tape_input,
-        app.language.tape_length_input_label,
+        tape_length_input_label,
         tape_length_input,
-        app.language.initial_cursor_position_input_label,
+        initial_cursor_position_input_label,
         initial_cursor_position_input,
-        app.language.table_states_number_input_label,
+        table_states_number_input_label,
         table_states_number_input,
-        app.language.table_characters_input_label,
+        table_characters_input_label,
         table_characters_input,
         start_button,
     ]

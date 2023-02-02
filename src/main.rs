@@ -268,7 +268,10 @@ impl App {
         };
 
         if let Err(_) = res() {
-            return error_dialog(self.language.open_file_error_description, self.language);
+            return error_dialog(
+                self.language.dialog_texts.open_file_error_description,
+                self.language,
+            );
         }
 
         return Command::none();
@@ -284,7 +287,10 @@ impl App {
         };
 
         if let Err(_) = res() {
-            return error_dialog(self.language.save_file_error_description, self.language);
+            return error_dialog(
+                self.language.dialog_texts.save_file_error_description,
+                self.language,
+            );
         }
 
         return Command::none();

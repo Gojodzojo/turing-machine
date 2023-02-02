@@ -1,6 +1,10 @@
 mod editor_scene;
-mod machine_scene;
 mod side_column;
+mod simulation_scene;
+
+pub use editor_scene::EditorSceneTexts;
+pub use side_column::SideColumnTexts;
+pub use simulation_scene::SimulationSceneTexts;
 
 use crate::{App, Message};
 use iced::{
@@ -8,7 +12,7 @@ use iced::{
     Element, Length,
 };
 
-use self::{editor_scene::editor_scene, machine_scene::machine_scene, side_column::side_column};
+use self::{editor_scene::editor_scene, side_column::side_column, simulation_scene::machine_scene};
 
 pub enum Scene {
     Editor,

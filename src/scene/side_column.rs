@@ -6,7 +6,30 @@ use iced::{
 
 use crate::{constants::ICON_BYTES, language::ALL_LANGUAGES, my_theme::MyTheme, App, Message};
 
+#[derive(PartialEq, Eq)]
+pub struct SideColumnTexts {
+    pub new_file_button_text: &'static str,
+    pub open_file_button_text: &'static str,
+    pub save_file_button_text: &'static str,
+    pub save_file_as_button_text: &'static str,
+    pub help_button_text: &'static str,
+    pub help_url: &'static str,
+    pub about_program_button_text: &'static str,
+    pub theme_picker_label: &'static str,
+}
+
 pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
+    let SideColumnTexts {
+        new_file_button_text,
+        open_file_button_text,
+        save_file_button_text,
+        save_file_as_button_text,
+        help_button_text,
+        help_url,
+        about_program_button_text,
+        theme_picker_label,
+    } = app.language.side_column_texts;
+
     let icon = if app.is_side_column_opened {
         " < "
     } else {
@@ -28,36 +51,36 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
             .vertical_alignment(alignment::Vertical::Top)
             .size(30);
 
-        let new_file_button = button(app.language.new_file_button_text)
+        let new_file_button = button(new_file_button_text)
             .padding(10)
             .width(Length::Fill)
             .on_press(Message::WithUnsavedFileDialog(Box::new(
                 Message::NewFileClicked,
             )));
 
-        let open_file_button = button(app.language.open_file_button_text)
+        let open_file_button = button(open_file_button_text)
             .padding(10)
             .width(Length::Fill)
             .on_press(Message::WithUnsavedFileDialog(Box::new(
                 Message::OpenFileClicked,
             )));
 
-        let save_file_button = button(app.language.save_file_button_text)
+        let save_file_button = button(save_file_button_text)
             .padding(10)
             .width(Length::Fill)
             .on_press(Message::SaveFileClicked);
 
-        let save_file_as_button = button(app.language.save_file_as_button_text)
+        let save_file_as_button = button(save_file_as_button_text)
             .padding(10)
             .width(Length::Fill)
             .on_press(Message::SaveFileAsClicked);
 
-        let help_button = button(app.language.help_button_text)
+        let help_button = button(help_button_text)
             .padding(10)
             .width(Length::Fill)
-            .on_press(Message::OpenURL(app.language.help_url));
+            .on_press(Message::OpenURL(help_url));
 
-        let about_program_button = button(app.language.about_program_button_text)
+        let about_program_button = button(about_program_button_text)
             .padding(10)
             .width(Length::Fill)
             .on_press(Message::AboutProgramClicked);
@@ -93,7 +116,7 @@ pub fn side_column<'a>(app: &'a App) -> Element<'a, Message> {
             about_program_button,
             language_picker_label,
             language_pick_list,
-            app.language.theme_picker_label,
+            theme_picker_label,
             theme_pick_list
         ]
         .width(Length::Units(280))
